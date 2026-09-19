@@ -1,11 +1,21 @@
 function required(name: string): string {
-  const value = process.env[name];
+  // Values pasted into a hosting dashboard pick up stray whitespace easily.
+  const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(
       `Missing environment variable ${name}. Copy .env.example to .env.local and fill it in.`,
     );
   }
   return value;
+}
+
+/**
+ * Supabase's gateway rejects a doubled slash with "Invalid path specified in
+ * request URL", so a project URL copied with a trailing slash breaks every
+ * call. Drop it rather than make that someone's afternoon.
+ */
+function originOnly(url: string): string {
+  return url.replace(/\/+$/, "");
 }
 
 /**
@@ -22,7 +32,7 @@ export function supabaseConfigured(): boolean {
 
 export const env = {
   get supabaseUrl() {
-    return required("NEXT_PUBLIC_SUPABASE_URL");
+    return originOnly(required("NEXT_PUBLIC_SUPABASE_URL"));
   },
   get supabaseAnonKey() {
     return required("NEXT_PUBLIC_SUPABASE_ANON_KEY");
@@ -36,10 +46,11 @@ export const env = {
    * domain, which follows a custom domain once one is attached.
    */
   get siteUrl() {
-    if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+    const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+    if (explicit) return originOnly(explicit);
 
-    const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-    if (vercelDomain) return `https://${vercelDomain}`;
+    const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+    if (vercelDomain) return `https://${originOnly(vercelDomain)}`;
 
     return "http://localhost:3000";
   },
