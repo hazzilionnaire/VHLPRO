@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import type {
   Game,
   GameScore,
+  GameStat,
   Player,
   PlayerTotal,
   RsvpWithPlayer,
@@ -13,6 +14,15 @@ import type {
 } from "@/lib/types";
 
 export type GameWithScores = Game & { scores: Pick<GameScore, "team_id" | "goals">[] };
+
+/** A game plus whether its RSVP window has passed, judged when it was fetched. */
+export type GameForRsvp = GameWithScores & { rsvp_closed: boolean };
+
+function rsvpClosed(game: GameWithScores): boolean {
+  if (game.status !== "scheduled") return true;
+  const deadline = game.rsvp_closes_at ?? game.starts_at;
+  return new Date(deadline).getTime() < Date.now();
+}
 
 export async function getActiveSeason(): Promise<Season | null> {
   const { data } = await supabaseAdmin()
@@ -89,14 +99,14 @@ export async function getGameById(id: string): Promise<GameWithScores | null> {
 }
 
 /** The weekly link resolves a game by its token, never by a guessable id. */
-export async function getGameByToken(token: string): Promise<GameWithScores | null> {
+export async function getGameByToken(token: string): Promise<GameForRsvp | null> {
   const { data } = await supabaseAdmin()
     .from("games")
     .select("*, scores:game_scores(team_id, goals)")
     .eq("rsvp_token", token)
     .maybeSingle<GameWithScores>();
 
-  return data ?? null;
+  return data ? { ...data, rsvp_closed: rsvpClosed(data) } : null;
 }
 
 export async function getRsvps(gameId: string): Promise<RsvpWithPlayer[]> {
@@ -107,6 +117,34 @@ export async function getRsvps(gameId: string): Promise<RsvpWithPlayer[]> {
     .returns<RsvpWithPlayer[]>();
 
   return (data ?? []).sort((a, b) => a.player.full_name.localeCompare(b.player.full_name));
+}
+
+export async function getGameStats(gameId: string): Promise<GameStat[]> {
+  const { data } = await supabaseAdmin()
+    .from("game_stats")
+    .select("*")
+    .eq("game_id", gameId)
+    .returns<GameStat[]>();
+
+  return data ?? [];
+}
+
+/** How many players said yes, per game — for the admin games list. */
+export async function getInCounts(gameIds: string[]): Promise<Map<string, number>> {
+  if (gameIds.length === 0) return new Map();
+
+  const { data } = await supabaseAdmin()
+    .from("rsvps")
+    .select("game_id")
+    .in("game_id", gameIds)
+    .eq("status", "in")
+    .returns<{ game_id: string }[]>();
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    counts.set(row.game_id, (counts.get(row.game_id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 export async function getPlayers(includeInactive = false): Promise<Player[]> {

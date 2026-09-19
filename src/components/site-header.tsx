@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getViewer } from "@/lib/auth";
+import { supabaseConfigured } from "@/lib/env";
 
 const links = [
   { href: "/", label: "Home" },
@@ -10,7 +11,7 @@ const links = [
 ] as const;
 
 export async function SiteHeader() {
-  const viewer = await getViewer().catch(() => null);
+  const viewer = supabaseConfigured() ? await getViewer().catch(() => null) : null;
 
   return (
     <header className="border-b border-rink-800 bg-rink-950/80 backdrop-blur">

@@ -31,9 +31,7 @@ export default async function RsvpPage({ params }: PageProps<"/rsvp/[token]">) {
   const rememberedPlayerId = cookieStore.get(PLAYER_COOKIE)?.value ?? null;
   const myRsvp = rsvps.find((rsvp) => rsvp.player_id === rememberedPlayerId) ?? null;
 
-  const deadline = game.rsvp_closes_at ?? game.starts_at;
-  const closed =
-    game.status !== "scheduled" || new Date(deadline).getTime() < Date.now();
+  const closed = game.rsvp_closed;
 
   const inList = rsvps.filter((rsvp) => rsvp.status === "in");
   const maybeList = rsvps.filter((rsvp) => rsvp.status === "maybe");

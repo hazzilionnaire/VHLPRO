@@ -56,7 +56,7 @@ export async function requireRole(roles: AppRole[], returnTo = "/admin"): Promis
     redirect(`/login?next=${encodeURIComponent(returnTo)}`);
   }
   if (!roles.includes(viewer.role)) {
-    redirect("/admin/no-access");
+    redirect("/no-access");
   }
   return viewer;
 }
