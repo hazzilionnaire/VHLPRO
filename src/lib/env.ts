@@ -30,7 +30,17 @@ export const env = {
   get supabaseServiceRoleKey() {
     return required("SUPABASE_SERVICE_ROLE_KEY");
   },
+  /**
+   * Where the site lives, used to build the sign-in link's redirect. An
+   * explicit value wins; on Vercel we fall back to the stable production
+   * domain, which follows a custom domain once one is attached.
+   */
   get siteUrl() {
-    return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+
+    const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    if (vercelDomain) return `https://${vercelDomain}`;
+
+    return "http://localhost:3000";
   },
 };

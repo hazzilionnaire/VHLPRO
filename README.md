@@ -75,6 +75,10 @@ Tailwind CSS v4, Supabase (Postgres + Auth).
 
 ## Deploying
 
-Deploys as a standard Next.js app — Vercel is the easy path. Set the same
-environment variables in the host, with `NEXT_PUBLIC_SITE_URL` pointing at the
-real domain, and add that domain to Supabase's redirect URLs.
+Deploys as a standard Next.js app — Vercel is the easy path. Set the Supabase
+variables in the host and add the live domain plus `<domain>/auth/callback` to
+Supabase's redirect URLs.
+
+`NEXT_PUBLIC_SITE_URL` can be left unset on Vercel: the production domain is
+read from `VERCEL_PROJECT_PRODUCTION_URL`, which follows a custom domain once
+you attach one. Set it explicitly anywhere else.
