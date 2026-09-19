@@ -30,7 +30,13 @@ export async function sendMagicLink(
   });
 
   if (error) {
-    return { ok: false, message: error.message };
+    // Say which project and redirect were used. Both are already public
+    // (the project URL ships in the browser bundle), and without them a
+    // gateway-level message like "Invalid path" is impossible to place.
+    return {
+      ok: false,
+      message: `${error.message} — tried ${env.supabaseUrl} with redirect ${env.siteUrl}/auth/callback`,
+    };
   }
 
   return { ok: true, message: `Check ${email} for your sign-in link.` };

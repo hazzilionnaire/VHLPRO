@@ -10,12 +10,30 @@ function required(name: string): string {
 }
 
 /**
- * Supabase's gateway rejects a doubled slash with "Invalid path specified in
- * request URL", so a project URL copied with a trailing slash breaks every
- * call. Drop it rather than make that someone's afternoon.
+ * Reduce a pasted URL to its scheme and host.
+ *
+ * The Supabase dashboard offers several URLs, and the wrong one — or the right
+ * one with a trailing slash — leaves a path that ends up doubled inside every
+ * API call. The gateway then answers "Invalid path specified in request URL",
+ * which tells you nothing about the cause. So take the origin and ignore the
+ * rest: `https://x.supabase.co/rest/v1/` and `https://x.supabase.co/` both
+ * become `https://x.supabase.co`.
+ *
+ * A missing scheme is the other common slip, and `new URL` rejects it, so try
+ * again with https:// before giving up on the value.
  */
 function originOnly(url: string): string {
-  return url.replace(/\/+$/, "");
+  const trimmed = url.trim();
+
+  for (const candidate of [trimmed, `https://${trimmed}`]) {
+    try {
+      return new URL(candidate).origin;
+    } catch {
+      // Not parseable as-is; fall through to the next candidate.
+    }
+  }
+
+  return trimmed.replace(/\/+$/, "");
 }
 
 /**
