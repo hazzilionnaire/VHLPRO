@@ -1,26 +1,36 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Rink at night: deep slate boards, ice blue lines, cold white. */
+  --color-rink-950: #060a16;
+  --color-rink-900: #0b1120;
+  --color-rink-850: #111a2e;
+  --color-rink-800: #172136;
+  --color-rink-700: #24334f;
+  --color-rink-600: #35486b;
+  --color-ice-400: #60a5fa;
+  --color-ice-500: #3b82f6;
+  --color-ice-600: #2563eb;
+  --color-chalk: #e8eef8;
+  --color-muted: #8ea2c0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(1100px 500px at 15% -10%, rgba(37, 99, 235, 0.16), transparent 60%),
+    radial-gradient(900px 400px at 100% 0%, rgba(148, 163, 184, 0.1), transparent 55%),
+    var(--color-rink-950);
+  color: var(--color-chalk);
+}
+
+/* Numbers in stat tables should line up column to column. */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
