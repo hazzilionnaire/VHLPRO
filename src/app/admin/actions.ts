@@ -242,33 +242,6 @@ export async function autoSplitTeams(_prev: ActionState, formData: FormData): Pr
   });
 }
 
-export async function setRostersPublished(
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  return runAction(async () => {
-    await requireRole(["admin"]);
-
-    const gameId = String(formData.get("gameId") ?? "");
-    const published = String(formData.get("published") ?? "") === "true";
-
-    const { data, error } = await supabaseAdmin()
-      .from("games")
-      .update({ rosters_published: published })
-      .eq("id", gameId)
-      .select("rsvp_token")
-      .single<Pick<Game, "rsvp_token">>();
-
-    if (error) return fail("Could not update the roster visibility", error);
-
-    refreshGame(gameId, data?.rsvp_token);
-    return {
-      ok: true,
-      message: published ? "Teams are now visible on the RSVP page." : "Teams hidden again.",
-    };
-  });
-}
-
 /* ------------------------------------------------------------ results --- */
 
 /** Captains and admins both report results; the game becomes final here. */

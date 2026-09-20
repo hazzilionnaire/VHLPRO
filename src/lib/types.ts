@@ -39,6 +39,7 @@ export type Game = {
   status: GameStatus;
   rsvp_token: string;
   rsvp_closes_at: string | null;
+  /** Unused: the sides are public as they fill in. Kept so the gate can return. */
   rosters_published: boolean;
   notes: string | null;
 };

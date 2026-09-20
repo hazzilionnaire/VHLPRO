@@ -89,16 +89,7 @@ export default async function RsvpPage({ params }: PageProps<"/rsvp/[token]">) {
 
       <section>
         <SectionHeading title={`In · ${inList.length}`} />
-        {game.rosters_published ? (
-          <TeamRosters rsvps={inList} teams={teams} />
-        ) : (
-          <Card>
-            <PlayerList rsvps={inList} empty="Nobody has said yes yet." />
-            <p className="mt-4 border-t border-rink-800 pt-3 text-xs text-muted">
-              Teams go up once the admin has set the lines.
-            </p>
-          </Card>
-        )}
+        <TeamRosters rsvps={inList} teams={teams} />
       </section>
 
       {maybeList.length > 0 && (

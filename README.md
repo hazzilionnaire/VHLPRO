@@ -12,11 +12,10 @@ White team allocation, and season stats.
    pick their name from the roster; only an admin can add someone to it, so
    new players go in through **Admin → Players** first.
 4. Each player belongs to **Blue** or **White** on the roster, so their RSVP
-   already puts them on a side. The admin opens the game to check the split,
-   overrides anyone needed for that night, and hits **Publish teams**.
-   **Even the sides** deals out anyone without a team and leaves the rest
-   where they are.
-5. Everyone on the RSVP link now sees the two rosters.
+   already puts them on a side, and both benches are visible to everyone as
+   they fill in — on the home page and on the RSVP link.
+5. The admin overrides anyone needed for that night. **Even the sides** deals
+   out the players who have no team and leaves the rest where they are.
 6. After the game, an admin or captain enters the score and each player's line,
    which closes the game and updates standings and stats.
 

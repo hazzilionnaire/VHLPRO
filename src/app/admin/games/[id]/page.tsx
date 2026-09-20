@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  autoSplitTeams,
-  saveResult,
-  saveTeamAssignments,
-  setRostersPublished,
-  updateGame,
-} from "@/app/admin/actions";
+import { autoSplitTeams, saveResult, saveTeamAssignments, updateGame } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { CopyLink } from "@/components/copy-link";
 import { TeamBadge } from "@/components/team-badge";
@@ -147,25 +141,12 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
           <SectionHeading
             title={`Blue vs White · ${playing.length} in`}
             action={
-              <div className="flex gap-2">
-                <ActionForm action={autoSplitTeams}>
-                  <input type="hidden" name="gameId" value={game.id} />
-                  <SubmitButton variant="ghost" className="px-3 py-1.5 text-xs">
-                    Even the sides
-                  </SubmitButton>
-                </ActionForm>
-                <ActionForm action={setRostersPublished}>
-                  <input type="hidden" name="gameId" value={game.id} />
-                  <input
-                    type="hidden"
-                    name="published"
-                    value={game.rosters_published ? "false" : "true"}
-                  />
-                  <SubmitButton variant="ghost" className="px-3 py-1.5 text-xs">
-                    {game.rosters_published ? "Hide teams" : "Publish teams"}
-                  </SubmitButton>
-                </ActionForm>
-              </div>
+              <ActionForm action={autoSplitTeams}>
+                <input type="hidden" name="gameId" value={game.id} />
+                <SubmitButton variant="ghost" className="px-3 py-1.5 text-xs">
+                  Even the sides
+                </SubmitButton>
+              </ActionForm>
             }
           />
 

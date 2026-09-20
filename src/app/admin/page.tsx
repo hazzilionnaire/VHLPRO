@@ -71,11 +71,6 @@ export default async function AdminGamesPage() {
                   <span className="tabular text-sm text-muted">
                     {counts.get(game.id) ?? 0} in
                   </span>
-                  {game.rosters_published ? (
-                    <Pill tone="good">Teams up</Pill>
-                  ) : (
-                    <Pill tone="warn">Teams hidden</Pill>
-                  )}
                   <CopyLink path={`/rsvp/${game.rsvp_token}`} />
                 </div>
               </div>

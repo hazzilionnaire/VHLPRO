@@ -5,7 +5,6 @@ import { TeamRosters } from "@/components/roster-lists";
 import { ScoreLine } from "@/components/score-line";
 import { SetupNotice } from "@/components/setup-notice";
 import { Card, EmptyState, Pill, SectionHeading } from "@/components/ui";
-import { canReportResults, getViewer } from "@/lib/auth";
 import { describeCountdown, formatGameDateLong, formatGameTime } from "@/lib/datetime";
 import { supabaseConfigured } from "@/lib/env";
 import {
@@ -60,10 +59,6 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   // Organizers watch the sides fill up as answers come in; everyone else sees
   // them once the admin is happy with the split and publishes.
-  const viewer = await getViewer();
-  const organizing = viewer ? canReportResults(viewer.role) : false;
-  const showRosters = organizing || (nextGame?.rosters_published ?? false);
-
   const { rsvp, team: teamId } = await searchParams;
   const confirmation = rsvpConfirmation(
     typeof rsvp === "string" ? rsvp : undefined,
@@ -126,16 +121,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         )}
       </section>
 
-      {nextGame && showRosters && (
+      {nextGame && (
         <section>
-          <SectionHeading
-            title="Who's in"
-            action={
-              organizing && !nextGame.rosters_published ? (
-                <span className="text-xs text-amber-300">Not published yet — only you see this</span>
-              ) : null
-            }
-          />
+          <SectionHeading title="Who's in" />
           <TeamRosters rsvps={playingIn} teams={teams} />
         </section>
       )}
