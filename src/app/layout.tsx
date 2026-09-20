@@ -21,6 +21,18 @@ export const metadata: Metadata = {
   },
   description:
     "Schedule, weekly RSVP, Blue vs White rosters and stats for the VHL Pro hockey league.",
+  // The league's names, and who is in or out each week, are nobody else's
+  // business. The site stays open to anyone holding the link — it just doesn't
+  // turn up in search results.
+  //
+  // Deliberately no robots.txt disallow: a crawler that is blocked from
+  // fetching the page never reads this, and can still list a bare URL it found
+  // elsewhere. Letting it read and obey the rule is what keeps us out.
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: { index: false, follow: false },
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
