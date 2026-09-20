@@ -67,8 +67,10 @@ export const env = {
     const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
     if (explicit) return originOnly(explicit);
 
+    // Vercel gives a bare host, with no scheme. originOnly supplies one, so
+    // don't add a second here.
     const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
-    if (vercelDomain) return `https://${originOnly(vercelDomain)}`;
+    if (vercelDomain) return originOnly(vercelDomain);
 
     return "http://localhost:3000";
   },
