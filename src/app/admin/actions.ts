@@ -516,6 +516,46 @@ export async function setPlayerActive(_prev: ActionState, formData: FormData): P
   });
 }
 
+/* -------------------------------------------------------------- teams --- */
+
+export async function saveTeamCaptain(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  return runAction(async () => {
+    await requireRole(["admin"]);
+
+    const teamId = String(formData.get("teamId") ?? "");
+    const captainName = String(formData.get("captainName") ?? "").trim();
+    const photoUrl = String(formData.get("captainPhotoUrl") ?? "").trim();
+
+    if (!teamId) return { ok: false, message: "Missing team." };
+
+    // Either a file living in this site's /public folder, or a full https
+    // address. Anything else — a javascript: or data: url especially — has no
+    // business being dropped into an <img> on every page.
+    if (photoUrl && !/^(\/[^/]|https:\/\/)/.test(photoUrl)) {
+      return {
+        ok: false,
+        message: "The photo needs to start with https:// or with / for a file in this site.",
+      };
+    }
+
+    const { error } = await supabaseAdmin()
+      .from("teams")
+      .update({
+        captain_name: captainName || null,
+        captain_photo_url: photoUrl || null,
+      })
+      .eq("id", teamId);
+
+    if (error) return fail("Could not save the captain", error);
+
+    revalidatePath("/", "layout");
+    return { ok: true, message: "Captain saved." };
+  });
+}
+
 /* -------------------------------------------------------------- roles --- */
 
 export async function setRole(_prev: ActionState, formData: FormData): Promise<ActionState> {

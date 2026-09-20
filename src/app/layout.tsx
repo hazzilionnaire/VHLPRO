@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { CaptainRails } from "@/components/captain-rails";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
@@ -42,8 +43,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
+        <CaptainRails />
         <SiteHeader />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-8 pb-16 sm:px-6">
+        <main className="relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 pt-8 pb-16 sm:px-6">
           {children}
         </main>
         <footer className="border-t border-rink-800 px-4 py-6 text-center text-xs text-muted sm:px-6">

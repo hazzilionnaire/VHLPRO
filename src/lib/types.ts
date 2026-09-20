@@ -9,6 +9,8 @@ export type Team = {
   slug: string;
   color: string;
   sort_order: number;
+  captain_name: string | null;
+  captain_photo_url: string | null;
 };
 
 export type Season = {
