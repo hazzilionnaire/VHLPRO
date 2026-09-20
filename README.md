@@ -58,6 +58,20 @@ in **Admin → Access**.
    `<site>/auth/callback` as a redirect URL, or the emailed sign-in link won't
    come back to the right place.
 
+## Changing the schema later
+
+After running a migration that adds or renames a column, tell the API layer to
+look at the table again:
+
+```sql
+notify pgrst, 'reload schema';
+```
+
+PostgREST answers from a cached picture of the schema. Until it reloads, writes
+to a new column are rejected as unknown — which surfaces as a form that quietly
+refuses to save the new field. The migrations here end with that line; run it
+yourself if you change anything by hand.
+
 ## How the data is protected
 
 Every table has row-level security enabled and **no policies**, so the anon and
