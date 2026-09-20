@@ -11,7 +11,7 @@ type Topic = { q: string; a: string };
  */
 const PLAYER_TOPICS: Topic[] = [
   {
-    q: "How do I say whether I'm playing?",
+    q: "How do I RSVP?",
     a: "Open the RSVP link for that game — the one shared in the group chat. Pick your name from the list, then tap I'm in, Maybe, or Can't make it. No account needed. Your browser remembers you, so next week your name is already selected.",
   },
   {
@@ -23,7 +23,7 @@ const PLAYER_TOPICS: Topic[] = [
     a: "You're put on your usual team automatically when you RSVP, and the confirmation tells you which one. Both rosters are also on the home page under \"Who's in\".",
   },
   {
-    q: "Can I change my answer?",
+    q: "Can I change my RSVP?",
     a: "Yes, as many times as you like right up until the game starts. Open the same link again and pick a different answer.",
   },
   {
@@ -31,12 +31,12 @@ const PLAYER_TOPICS: Topic[] = [
     a: "Yes. The home page lists the upcoming games and the Schedule page lists them all, each with its own RSVP button. You can answer for several Fridays in one sitting.",
   },
   {
-    q: "How do I add my goals and assists?",
-    a: "Go to the Stats tab. In the \"Your stats\" box, choose the game and your name, type in your goals and assists, then Save my line. The tables below update immediately.",
+    q: "How do I update my stats?",
+    a: "Go to the Stats tab. In the \"Your stats\" box, choose the game and your name, type in your goals and assists, then Save my line. The tables below update immediately. Goalies also get boxes for goals against and shots against.",
   },
   {
-    q: "I entered my stats wrong",
-    a: "Open the same form on the Stats tab and pick the same game and name — it loads what you entered last time. Correct the numbers and save again. There's no deadline.",
+    q: "I entered the wrong numbers",
+    a: "Use the same box on the Stats tab and pick the same game and name — it loads whatever you entered last time. Change the numbers and save again. There's no deadline and no limit on how often.",
   },
   {
     q: "Do I need a password?",
