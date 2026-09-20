@@ -39,12 +39,20 @@ export default async function AdminGamesPage() {
           <p className="mt-1 text-sm text-muted">{season.name} season</p>
         </div>
         {viewer?.role === "admin" && (
-          <Link
-            href="/admin/games/new"
-            className="rounded-full bg-ice-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ice-500"
-          >
-            New game
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/games/schedule"
+              className="rounded-full border border-rink-700 px-4 py-2 text-sm font-medium transition hover:border-ice-500 hover:text-ice-400"
+            >
+              Schedule a run
+            </Link>
+            <Link
+              href="/admin/games/new"
+              className="rounded-full bg-ice-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ice-500"
+            >
+              New game
+            </Link>
+          </div>
         )}
       </div>
 

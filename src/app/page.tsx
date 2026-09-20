@@ -10,8 +10,8 @@ import { supabaseConfigured } from "@/lib/env";
 import {
   describeDatabaseFailure,
   getActiveSeason,
-  getNextGame,
   getPlayerTotals,
+  getUpcomingGames,
   getRecentResults,
   getRsvps,
   getStandings,
@@ -119,13 +119,16 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     );
   }
 
-  const [teams, nextGame, results, standings, totals] = await Promise.all([
+  const [teams, upcoming, results, standings, totals] = await Promise.all([
     getTeams(),
-    getNextGame(season.id),
+    getUpcomingGames(season.id, 6),
     getRecentResults(season.id, 4),
     getStandings(season.id),
     getPlayerTotals(season.id),
   ]);
+
+  // The soonest game leads the page; the rest fill the schedule section below.
+  const [nextGame, ...laterGames] = upcoming;
 
   const goalLeaders = leadersBy(totals, "goals");
   const appearanceLeaders = leadersBy(totals, "games_played");
@@ -282,6 +285,47 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           </Card>
         ) : (
           <EmptyState>No results yet — the season is young.</EmptyState>
+        )}
+      </section>
+
+      <section>
+        <SectionHeading
+          title="Upcoming games"
+          action={
+            <Link href="/schedule" className="text-xs text-muted hover:text-chalk">
+              Full schedule
+            </Link>
+          }
+        />
+        {laterGames.length > 0 ? (
+          <Card className="divide-y divide-rink-800 p-0">
+            {laterGames.map((game) => (
+              <div
+                key={game.id}
+                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+              >
+                <div>
+                  <p className="font-medium">{formatGameDateLong(game.starts_at)}</p>
+                  <p className="text-sm text-muted">
+                    {formatGameTime(game.starts_at)}
+                    {game.location ? ` · ${game.location}` : ""}
+                  </p>
+                </div>
+                <Link
+                  href={`/rsvp/${game.rsvp_token}`}
+                  className="rounded-full border border-rink-700 px-3 py-1.5 text-xs font-medium transition hover:border-ice-500 hover:text-ice-400"
+                >
+                  RSVP
+                </Link>
+              </div>
+            ))}
+          </Card>
+        ) : (
+          <EmptyState>
+            {nextGame
+              ? "Nothing else on the calendar after the next game."
+              : "Nothing on the calendar yet."}
+          </EmptyState>
         )}
       </section>
     </div>

@@ -78,6 +78,102 @@ export async function createGame(_prev: ActionState, formData: FormData): Promis
   });
 }
 
+/** Guards against a typo in the end date generating years of hockey. */
+const MAX_GAMES_PER_RUN = 60;
+
+/**
+ * Lay out a season's worth of games in one go — same weekday, same time, same
+ * rink, until the date given. The weekday comes from the first date rather
+ * than being picked separately, so the two can't disagree.
+ *
+ * Dates advance a calendar week at a time and are converted to UTC one by one,
+ * so a run that crosses a clock change still starts at the same local time on
+ * both sides of it.
+ */
+export async function createWeeklyGames(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  return runAction(async () => {
+    await requireRole(["admin"]);
+
+    const firstDate = String(formData.get("firstDate") ?? "");
+    const time = String(formData.get("time") ?? "");
+    const untilDate = String(formData.get("untilDate") ?? "");
+    const location = String(formData.get("location") ?? "").trim();
+    const notes = String(formData.get("notes") ?? "").trim();
+
+    if (!firstDate || !time || !untilDate) {
+      return { ok: false, message: "Give a first date, a time, and a date to run until." };
+    }
+    if (untilDate < firstDate) {
+      return { ok: false, message: "The end date is before the first game." };
+    }
+
+    const db = supabaseAdmin();
+    const { data: season } = await db
+      .from("seasons")
+      .select("id")
+      .eq("is_active", true)
+      .maybeSingle<{ id: string }>();
+
+    if (!season) return { ok: false, message: "There's no active season to add these to." };
+
+    // Step through calendar dates in UTC, where a week is always 7 × 24 hours.
+    const starts: string[] = [];
+    const end = Date.parse(`${untilDate}T00:00:00Z`);
+
+    for (
+      let cursor = Date.parse(`${firstDate}T00:00:00Z`);
+      cursor <= end && starts.length < MAX_GAMES_PER_RUN;
+      cursor += 7 * 24 * 60 * 60 * 1000
+    ) {
+      const day = new Date(cursor).toISOString().slice(0, 10);
+      starts.push(leagueLocalToUtcIso(`${day}T${time}`));
+    }
+
+    if (starts.length === 0) return { ok: false, message: "That range doesn't contain a game." };
+
+    // Don't double up on a night that's already in the schedule.
+    const { data: clashes } = await db
+      .from("games")
+      .select("starts_at")
+      .eq("season_id", season.id)
+      .in("starts_at", starts)
+      .returns<{ starts_at: string }[]>();
+
+    const taken = new Set((clashes ?? []).map((game) => Date.parse(game.starts_at)));
+    const fresh = starts.filter((start) => !taken.has(Date.parse(start)));
+
+    if (fresh.length === 0) {
+      return { ok: false, message: "Every one of those nights is already on the schedule." };
+    }
+
+    const { error } = await db.from("games").insert(
+      fresh.map((startsAt) => ({
+        season_id: season.id,
+        starts_at: startsAt,
+        location: location || null,
+        notes: notes || null,
+      })),
+    );
+
+    if (error) return fail("Could not create the games", error);
+
+    revalidatePath("/");
+    revalidatePath("/schedule");
+    revalidatePath("/admin");
+
+    const skipped = starts.length - fresh.length;
+    return {
+      ok: true,
+      message:
+        `Added ${fresh.length} game${fresh.length === 1 ? "" : "s"}.` +
+        (skipped > 0 ? ` ${skipped} were already on the schedule.` : ""),
+    };
+  });
+}
+
 export async function updateGame(_prev: ActionState, formData: FormData): Promise<ActionState> {
   return runAction(async () => {
     await requireRole(["admin"]);
@@ -108,6 +204,29 @@ export async function updateGame(_prev: ActionState, formData: FormData): Promis
 
     refreshGame(gameId, data?.rsvp_token);
     return { ok: true, message: "Game saved." };
+  });
+}
+
+/**
+ * Remove a game outright, along with its RSVPs, scores and stats. For a night
+ * that was never real — a mistake in a run of fixtures — rather than one that
+ * fell through, which should be cancelled so it stays in the record.
+ */
+export async function deleteGame(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    await requireRole(["admin"]);
+
+    const gameId = String(formData.get("gameId") ?? "");
+    if (!gameId) return { ok: false, message: "Missing game." };
+
+    const { error } = await supabaseAdmin().from("games").delete().eq("id", gameId);
+    if (error) return fail("Could not delete the game", error);
+
+    revalidatePath("/");
+    revalidatePath("/schedule");
+    revalidatePath("/admin");
+
+    redirect("/admin");
   });
 }
 

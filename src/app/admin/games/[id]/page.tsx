@@ -10,6 +10,7 @@ import { getViewer } from "@/lib/auth";
 import { LEAGUE_TIME_ZONE, formatGameDateLong, utcIsoToLeagueLocal } from "@/lib/datetime";
 import { getGameById, getGameStats, getRsvps, getTeams } from "@/lib/queries";
 import type { GameStat, RsvpWithPlayer, Team } from "@/lib/types";
+import { DeleteGame } from "./delete-game";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,10 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
                 <SubmitButton>Save details</SubmitButton>
               </div>
             </ActionForm>
+
+            <div className="mt-5 border-t border-rink-800 pt-4">
+              <DeleteGame gameId={game.id} label={formatGameDateLong(game.starts_at)} />
+            </div>
           </Card>
         </section>
       )}
