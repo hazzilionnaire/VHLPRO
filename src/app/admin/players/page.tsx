@@ -23,7 +23,8 @@ export default async function AdminPlayersPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Players</h1>
         <p className="mt-1 text-sm text-muted">
-          Anyone who RSVPs through the weekly link is added here automatically.
+          This roster is the RSVP list. Only the people here can answer the weekly link, so add
+          anyone new before you send it out.
         </p>
       </div>
 

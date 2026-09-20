@@ -8,8 +8,9 @@ White team allocation, and season stats.
 1. An admin creates the game in **Admin → Games → New game**.
 2. The admin copies that game's RSVP link and shares it with the league.
 3. Players open the link and mark themselves **in**, **maybe** or **out**. No
-   account, no password — a cookie remembers who they are for next week. Anyone
-   not yet on the roster can add themselves from the same screen.
+   account, no password — a cookie remembers who they are for next week. They
+   pick their name from the roster; only an admin can add someone to it, so
+   new players go in through **Admin → Players** first.
 4. The admin opens the game in the admin area, splits the players who are in
    between **Blue** and **White** (there's an auto-split to start from), then
    hits **Publish teams**.

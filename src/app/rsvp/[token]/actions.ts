@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { PLAYER_COOKIE, PLAYER_COOKIE_MAX_AGE } from "@/lib/rsvp-cookie";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import type { Game, Player, PlayerPosition, RsvpStatus } from "@/lib/types";
+import type { Game, Player, RsvpStatus } from "@/lib/types";
 
 export type RsvpFormState = { ok: boolean; message: string } | null;
 
@@ -26,8 +26,6 @@ export async function submitRsvp(
   const token = String(formData.get("token") ?? "");
   const status = String(formData.get("status") ?? "") as RsvpStatus;
   const playerId = String(formData.get("playerId") ?? "");
-  const newName = String(formData.get("newPlayerName") ?? "").trim();
-  const newPosition = String(formData.get("newPlayerPosition") ?? "skater") as PlayerPosition;
   const note = String(formData.get("note") ?? "").trim();
 
   if (!["in", "out", "maybe"].includes(status)) {
@@ -47,39 +45,29 @@ export async function submitRsvp(
   const closed = isRsvpOpen(game);
   if (closed) return { ok: false, message: closed };
 
-  // Either an existing player picked from the list, or someone new to the league.
-  let resolvedPlayerId = playerId;
-
-  if (playerId === "__new__") {
-    if (newName.length < 2) {
-      return { ok: false, message: "Enter your name so we know who's playing." };
-    }
-
-    const { data: created, error } = await db
-      .from("players")
-      .insert({ full_name: newName, position: newPosition })
-      .select("id")
-      .single<Pick<Player, "id">>();
-
-    if (error || !created) {
-      return {
-        ok: false,
-        message: error?.message
-          ? `Could not add you to the roster: ${error.message}`
-          : "Could not add you to the roster. Try again.",
-      };
-    }
-    resolvedPlayerId = created.id;
+  if (!playerId) {
+    return { ok: false, message: "Choose your name from the list." };
   }
 
-  if (!resolvedPlayerId) {
-    return { ok: false, message: "Choose your name from the list." };
+  // The roster belongs to the admin, so only a name already on it may answer.
+  // The form offers nothing else, but the form isn't the only way to post here.
+  const { data: player } = await db
+    .from("players")
+    .select("id, is_active")
+    .eq("id", playerId)
+    .maybeSingle<Pick<Player, "id" | "is_active">>();
+
+  if (!player || !player.is_active) {
+    return {
+      ok: false,
+      message: "That name isn't on the roster. Ask the league admin to add you.",
+    };
   }
 
   const { error: rsvpError } = await db.from("rsvps").upsert(
     {
       game_id: game.id,
-      player_id: resolvedPlayerId,
+      player_id: player.id,
       status,
       note: note || null,
       responded_at: new Date().toISOString(),
@@ -92,7 +80,7 @@ export async function submitRsvp(
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(PLAYER_COOKIE, resolvedPlayerId, {
+  cookieStore.set(PLAYER_COOKIE, player.id, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

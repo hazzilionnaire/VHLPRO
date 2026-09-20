@@ -5,8 +5,6 @@ import { useActionState, useState } from "react";
 import type { Player, RsvpStatus } from "@/lib/types";
 import { submitRsvp, type RsvpFormState } from "./actions";
 
-const NEW_PLAYER = "__new__";
-
 export function RsvpForm({
   token,
   players,
@@ -46,28 +44,11 @@ export function RsvpForm({
               {player.position === "goalie" ? " (G)" : ""}
             </option>
           ))}
-          <option value={NEW_PLAYER}>I&apos;m new — add me</option>
         </select>
+        <p className="mt-1.5 text-xs text-muted">
+          Not on the list? Ask the league admin to add you.
+        </p>
       </div>
-
-      {selected === NEW_PLAYER && (
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <input
-            name="newPlayerName"
-            placeholder="Full name"
-            className="rounded-xl border border-rink-700 bg-rink-850 px-3 py-2.5 text-sm outline-none focus:border-ice-500"
-            required
-          />
-          <select
-            name="newPlayerPosition"
-            defaultValue="skater"
-            className="rounded-xl border border-rink-700 bg-rink-850 px-3 py-2.5 text-sm outline-none focus:border-ice-500"
-          >
-            <option value="skater">Skater</option>
-            <option value="goalie">Goalie</option>
-          </select>
-        </div>
-      )}
 
       <div>
         <label htmlFor="note" className="mb-1.5 block text-sm font-medium">

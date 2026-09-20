@@ -71,12 +71,19 @@ export default async function RsvpPage({ params }: PageProps<"/rsvp/[token]">) {
               <Pill tone="warn">Closes {formatGameDateTime(game.rsvp_closes_at)}</Pill>
             )}
           </div>
-          <RsvpForm
-            token={token}
-            players={players}
-            rememberedPlayerId={rememberedPlayerId}
-            currentStatus={(myRsvp?.status as RsvpStatus | undefined) ?? null}
-          />
+          {players.length === 0 ? (
+            <p className="text-sm text-muted">
+              The roster is empty, so there&apos;s no one to pick yet. The league admin adds
+              players before the first RSVP goes out.
+            </p>
+          ) : (
+            <RsvpForm
+              token={token}
+              players={players}
+              rememberedPlayerId={rememberedPlayerId}
+              currentStatus={(myRsvp?.status as RsvpStatus | undefined) ?? null}
+            />
+          )}
         </Card>
       )}
 
