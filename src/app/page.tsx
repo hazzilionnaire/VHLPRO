@@ -1,9 +1,11 @@
 import Link from "next/link";
 
 import { DatabaseError } from "@/components/database-error";
+import { TeamRosters } from "@/components/roster-lists";
 import { ScoreLine } from "@/components/score-line";
 import { SetupNotice } from "@/components/setup-notice";
 import { Card, EmptyState, Pill, SectionHeading } from "@/components/ui";
+import { canReportResults, getViewer } from "@/lib/auth";
 import { describeCountdown, formatGameDateLong, formatGameTime } from "@/lib/datetime";
 import { supabaseConfigured } from "@/lib/env";
 import {
@@ -44,6 +46,12 @@ export default async function HomePage() {
   const skatersIn = playingIn.filter((rsvp) => rsvp.player.position === "skater").length;
   const goaliesIn = playingIn.filter((rsvp) => rsvp.player.position === "goalie").length;
 
+  // Organizers watch the sides fill up as answers come in; everyone else sees
+  // them once the admin is happy with the split and publishes.
+  const viewer = await getViewer();
+  const organizing = viewer ? canReportResults(viewer.role) : false;
+  const showRosters = organizing || (nextGame?.rosters_published ?? false);
+
   return (
     <div className="space-y-10">
       <section>
@@ -83,6 +91,20 @@ export default async function HomePage() {
           <EmptyState>Nothing on the schedule right now.</EmptyState>
         )}
       </section>
+
+      {nextGame && showRosters && (
+        <section>
+          <SectionHeading
+            title="Who's in"
+            action={
+              organizing && !nextGame.rosters_published ? (
+                <span className="text-xs text-amber-300">Not published yet — only you see this</span>
+              ) : null
+            }
+          />
+          <TeamRosters rsvps={playingIn} teams={teams} />
+        </section>
+      )}
 
       <section>
         <SectionHeading
