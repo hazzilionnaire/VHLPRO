@@ -5,7 +5,7 @@ import { SetupNotice } from "@/components/setup-notice";
 import { Card, EmptyState, Pill, SectionHeading } from "@/components/ui";
 import { formatGameDateLong, formatGameTime } from "@/lib/datetime";
 import { supabaseConfigured } from "@/lib/env";
-import { getActiveSeason, getSeasonGames, getTeams, type GameWithScores } from "@/lib/queries";
+import { getActiveSeason, getSeasonSchedule, getTeams, type GameWithScores } from "@/lib/queries";
 import type { Team } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -17,10 +17,10 @@ export default async function SchedulePage() {
   const season = await getActiveSeason();
   if (!season) return <EmptyState>No active season yet.</EmptyState>;
 
-  const [teams, games] = await Promise.all([getTeams(), getSeasonGames(season.id)]);
-
-  const upcoming = games.filter((game) => game.status === "scheduled");
-  const played = games.filter((game) => game.status !== "scheduled").reverse();
+  const [teams, { upcoming, played }] = await Promise.all([
+    getTeams(),
+    getSeasonSchedule(season.id),
+  ]);
 
   return (
     <div className="space-y-10">

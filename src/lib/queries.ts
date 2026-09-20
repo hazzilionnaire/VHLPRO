@@ -64,13 +64,28 @@ export async function getTeams(): Promise<Team[]> {
   return data ?? [];
 }
 
-/** Games still to be played, soonest first. */
+/**
+ * A game stays "on now" for a while after the puck drops, so tonight's game
+ * doesn't vanish from the home page while it's being played.
+ */
+const IN_PROGRESS_GRACE_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * Games still to come, soonest first.
+ *
+ * Filtered by the clock, not just by status: a game nobody got round to
+ * finalising is in the past whatever its status says, and would otherwise sit
+ * at the top of the home page for the rest of the season.
+ */
 export async function getUpcomingGames(seasonId: string, limit = 10): Promise<GameWithScores[]> {
+  const from = new Date(Date.now() - IN_PROGRESS_GRACE_MS).toISOString();
+
   const { data } = await supabaseAdmin()
     .from("games")
     .select("*, scores:game_scores(team_id, goals)")
     .eq("season_id", seasonId)
     .eq("status", "scheduled")
+    .gte("starts_at", from)
     .order("starts_at", { ascending: true })
     .limit(limit)
     .returns<GameWithScores[]>();
@@ -95,6 +110,26 @@ export async function getRecentResults(seasonId: string, limit = 5): Promise<Gam
     .returns<GameWithScores[]>();
 
   return data ?? [];
+}
+
+/**
+ * The season split the way the schedule page reads it: still to come, and
+ * done with. Judged on the clock as well as the status, so a game nobody
+ * finalised stops advertising itself as upcoming.
+ */
+export async function getSeasonSchedule(
+  seasonId: string,
+): Promise<{ upcoming: GameWithScores[]; played: GameWithScores[] }> {
+  const games = await getSeasonGames(seasonId);
+  const cutoff = Date.now() - IN_PROGRESS_GRACE_MS;
+
+  const stillToCome = (game: GameWithScores) =>
+    game.status === "scheduled" && Date.parse(game.starts_at) >= cutoff;
+
+  return {
+    upcoming: games.filter(stillToCome),
+    played: games.filter((game) => !stillToCome(game)).reverse(),
+  };
 }
 
 export async function getSeasonGames(seasonId: string): Promise<GameWithScores[]> {
