@@ -20,7 +20,19 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+/** The line a player sees after answering, built from ids we trust. */
+function rsvpConfirmation(
+  status: string | undefined,
+  teamName: string | null,
+): string | null {
+  if (status === "out") return "Marked as out. Thanks for letting us know.";
+  if (status === "maybe") return "Marked as a maybe — update it when you know.";
+  if (status !== "in") return null;
+
+  return teamName ? `You're in, on ${teamName}. See you at the rink.` : "You're in. See you at the rink.";
+}
+
+export default async function HomePage({ searchParams }: PageProps<"/">) {
   if (!supabaseConfigured()) return <SetupNotice />;
 
   const season = await getActiveSeason();
@@ -52,8 +64,30 @@ export default async function HomePage() {
   const organizing = viewer ? canReportResults(viewer.role) : false;
   const showRosters = organizing || (nextGame?.rosters_published ?? false);
 
+  const { rsvp, team: teamId } = await searchParams;
+  const confirmation = rsvpConfirmation(
+    typeof rsvp === "string" ? rsvp : undefined,
+    teams.find((candidate) => candidate.id === teamId)?.name ?? null,
+  );
+
   return (
     <div className="space-y-10">
+      {confirmation && (
+        <p className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-200">
+          {confirmation}
+          {nextGame && (
+            <>
+              {" "}
+              <Link
+                href={`/rsvp/${nextGame.rsvp_token}`}
+                className="underline underline-offset-2 hover:text-emerald-100"
+              >
+                Change your answer
+              </Link>
+            </>
+          )}
+        </p>
+      )}
       <section>
         <SectionHeading title="Next game" />
         {nextGame ? (

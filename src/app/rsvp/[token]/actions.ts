@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { PLAYER_COOKIE, PLAYER_COOKIE_MAX_AGE } from "@/lib/rsvp-cookie";
@@ -101,26 +102,13 @@ export async function submitRsvp(
   });
 
   revalidatePath(`/rsvp/${token}`);
+  revalidatePath("/");
 
-  if (status !== "in") {
-    return {
-      ok: true,
-      message:
-        status === "maybe"
-          ? "Marked as a maybe — update it when you know."
-          : "Marked as out. Thanks for letting us know.",
-    };
-  }
+  // Answering hands them back to the league's front page. The confirmation
+  // travels in the URL so it survives the trip — the team is looked up there
+  // by id, not taken from the link, so nothing arbitrary can be put on screen.
+  const params = new URLSearchParams({ rsvp: status });
+  if (status === "in" && teamId) params.set("team", teamId);
 
-  // Tell them which sweater to bring, since they're on a side already.
-  const { data: team } = teamId
-    ? await db.from("teams").select("name").eq("id", teamId).maybeSingle<{ name: string }>()
-    : { data: null };
-
-  return {
-    ok: true,
-    message: team
-      ? `You're in, on ${team.name}. See you at the rink.`
-      : "You're in. See you at the rink.",
-  };
+  redirect(`/?${params.toString()}`);
 }
