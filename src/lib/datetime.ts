@@ -1,9 +1,32 @@
+const DEFAULT_TIME_ZONE = "America/Toronto";
+
+/**
+ * A hosting dashboard will happily hold an environment variable with an empty
+ * value, and `??` only steps aside for a missing one — so an empty box became
+ * a time zone named "", which every date call then threw on. Treat blank as
+ * unset, and check the name is one Intl actually knows before trusting it.
+ */
+function resolveTimeZone(): string {
+  const configured = process.env.NEXT_PUBLIC_LEAGUE_TIME_ZONE?.trim();
+  if (!configured) return DEFAULT_TIME_ZONE;
+
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: configured });
+    return configured;
+  } catch {
+    console.warn(
+      `Ignoring NEXT_PUBLIC_LEAGUE_TIME_ZONE="${configured}": not a time zone. Using ${DEFAULT_TIME_ZONE}.`,
+    );
+    return DEFAULT_TIME_ZONE;
+  }
+}
+
 /**
  * Game times are stored as UTC timestamps and always shown in the league's own
  * time zone, so a player opening the link on holiday still sees puck drop in
  * rink time. Override with NEXT_PUBLIC_LEAGUE_TIME_ZONE.
  */
-export const LEAGUE_TIME_ZONE = process.env.NEXT_PUBLIC_LEAGUE_TIME_ZONE ?? "America/Toronto";
+export const LEAGUE_TIME_ZONE = resolveTimeZone();
 
 function parts(date: Date, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: LEAGUE_TIME_ZONE, ...options }).format(date);
