@@ -151,7 +151,7 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
                 <ActionForm action={autoSplitTeams}>
                   <input type="hidden" name="gameId" value={game.id} />
                   <SubmitButton variant="ghost" className="px-3 py-1.5 text-xs">
-                    Auto-split
+                    Even the sides
                   </SubmitButton>
                 </ActionForm>
                 <ActionForm action={setRostersPublished}>

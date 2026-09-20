@@ -27,6 +27,8 @@ export type Player = {
   jersey_number: number | null;
   is_active: boolean;
   user_id: string | null;
+  /** The side this player normally skates for; fills in their RSVP. */
+  default_team_id: string | null;
 };
 
 export type Game = {

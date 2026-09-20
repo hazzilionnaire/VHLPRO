@@ -53,9 +53,9 @@ export async function submitRsvp(
   // The form offers nothing else, but the form isn't the only way to post here.
   const { data: player } = await db
     .from("players")
-    .select("id, is_active")
+    .select("id, is_active, default_team_id")
     .eq("id", playerId)
-    .maybeSingle<Pick<Player, "id" | "is_active">>();
+    .maybeSingle<Pick<Player, "id" | "is_active" | "default_team_id">>();
 
   if (!player || !player.is_active) {
     return {
@@ -64,11 +64,23 @@ export async function submitRsvp(
     };
   }
 
+  // Their usual side, unless this game already carries an override — changing
+  // an answer shouldn't undo a swap the admin made to even the teams out.
+  const { data: existing } = await db
+    .from("rsvps")
+    .select("team_id")
+    .eq("game_id", game.id)
+    .eq("player_id", player.id)
+    .maybeSingle<{ team_id: string | null }>();
+
+  const teamId = existing?.team_id ?? player.default_team_id ?? null;
+
   const { error: rsvpError } = await db.from("rsvps").upsert(
     {
       game_id: game.id,
       player_id: player.id,
       status,
+      team_id: teamId,
       note: note || null,
       responded_at: new Date().toISOString(),
     },
@@ -90,13 +102,25 @@ export async function submitRsvp(
 
   revalidatePath(`/rsvp/${token}`);
 
-  return {
-    ok: true,
-    message:
-      status === "in"
-        ? "You're in. See you at the rink."
-        : status === "maybe"
+  if (status !== "in") {
+    return {
+      ok: true,
+      message:
+        status === "maybe"
           ? "Marked as a maybe — update it when you know."
           : "Marked as out. Thanks for letting us know.",
+    };
+  }
+
+  // Tell them which sweater to bring, since they're on a side already.
+  const { data: team } = teamId
+    ? await db.from("teams").select("name").eq("id", teamId).maybeSingle<{ name: string }>()
+    : { data: null };
+
+  return {
+    ok: true,
+    message: team
+      ? `You're in, on ${team.name}. See you at the rink.`
+      : "You're in. See you at the rink.",
   };
 }

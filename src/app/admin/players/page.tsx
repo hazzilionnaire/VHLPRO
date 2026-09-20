@@ -2,8 +2,8 @@ import { savePlayer, setPlayerActive } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Card, EmptyState, SectionHeading } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
-import { getPlayers } from "@/lib/queries";
-import type { Player } from "@/lib/types";
+import { getPlayers, getTeams } from "@/lib/queries";
+import type { Player, Team } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Players" };
@@ -14,7 +14,7 @@ const field =
 export default async function AdminPlayersPage() {
   await requireRole(["admin"], "/admin/players");
 
-  const players = await getPlayers(true);
+  const [players, teams] = await Promise.all([getPlayers(true), getTeams()]);
   const active = players.filter((player) => player.is_active);
   const inactive = players.filter((player) => !player.is_active);
 
@@ -24,7 +24,8 @@ export default async function AdminPlayersPage() {
         <h1 className="text-2xl font-bold tracking-tight">Players</h1>
         <p className="mt-1 text-sm text-muted">
           This roster is the RSVP list. Only the people here can answer the weekly link, so add
-          anyone new before you send it out.
+          anyone new before you send it out. A player&apos;s team is applied automatically when
+          they RSVP; you can still override it for a single game.
         </p>
       </div>
 
@@ -53,6 +54,19 @@ export default async function AdminPlayersPage() {
                 <option value="goalie">Goalie</option>
               </select>
             </div>
+            <div>
+              <label htmlFor="defaultTeamId" className="mb-1.5 block text-sm font-medium">
+                Team
+              </label>
+              <select id="defaultTeamId" name="defaultTeamId" defaultValue="" className={field}>
+                <option value="">No team</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="w-24">
               <label htmlFor="jerseyNumber" className="mb-1.5 block text-sm font-medium">
                 Number
@@ -76,7 +90,7 @@ export default async function AdminPlayersPage() {
         {active.length > 0 ? (
           <Card className="divide-y divide-rink-800 p-0">
             {active.map((player) => (
-              <PlayerRow key={player.id} player={player} />
+              <PlayerRow key={player.id} player={player} teams={teams} />
             ))}
           </Card>
         ) : (
@@ -89,7 +103,7 @@ export default async function AdminPlayersPage() {
           <SectionHeading title={`Inactive · ${inactive.length}`} />
           <Card className="divide-y divide-rink-800 p-0">
             {inactive.map((player) => (
-              <PlayerRow key={player.id} player={player} />
+              <PlayerRow key={player.id} player={player} teams={teams} />
             ))}
           </Card>
         </section>
@@ -98,7 +112,7 @@ export default async function AdminPlayersPage() {
   );
 }
 
-function PlayerRow({ player }: { player: Player }) {
+function PlayerRow({ player, teams }: { player: Player; teams: Team[] }) {
   return (
     <div className="px-5 py-4">
       <ActionForm action={savePlayer} className="flex flex-wrap items-end gap-3">
@@ -131,6 +145,19 @@ function PlayerRow({ player }: { player: Player }) {
         >
           <option value="skater">Skater</option>
           <option value="goalie">Goalie</option>
+        </select>
+        <select
+          name="defaultTeamId"
+          defaultValue={player.default_team_id ?? ""}
+          aria-label="Team"
+          className={field}
+        >
+          <option value="">No team</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
         </select>
         <input
           name="jerseyNumber"

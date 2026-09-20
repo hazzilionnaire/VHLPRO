@@ -156,8 +156,9 @@ export async function saveTeamAssignments(
 }
 
 /**
- * A first pass at even sides: goalies split one each, then skaters dealt out
- * alternately. The admin still has the last word on the roster screen.
+ * Even up the sides for one night. Players keep the team they belong to; only
+ * those without one are dealt out, goalies first and always to the thinner
+ * bench. The admin still has the last word on the roster screen.
  */
 export async function autoSplitTeams(_prev: ActionState, formData: FormData): Promise<ActionState> {
   return runAction(async () => {
@@ -185,16 +186,35 @@ export async function autoSplitTeams(_prev: ActionState, formData: FormData): Pr
     if (!teams || teams.length < 2) return { ok: false, message: "Need two teams to split." };
     if (!rsvps || rsvps.length === 0) return { ok: false, message: "Nobody has said they're in." };
 
-    const byPosition = (position: PlayerPosition) =>
-      rsvps.filter((rsvp) => rsvp.player.position === position);
-
     const assignments: { id: string; teamId: string }[] = [];
-    let cursor = 0;
+    const sizes = new Map(teams.map((team) => [team.id, 0]));
+    const undecided: RsvpWithPlayer[] = [];
+
+    // A player's own side comes first — this evens out who's left over, it
+    // doesn't reshuffle the league.
+    for (const rsvp of rsvps) {
+      const side = rsvp.player.default_team_id;
+      if (side && sizes.has(side)) {
+        assignments.push({ id: rsvp.id, teamId: side });
+        sizes.set(side, (sizes.get(side) ?? 0) + 1);
+      } else {
+        undecided.push(rsvp);
+      }
+    }
+
+    // Then hand out whoever has no side, goalies first, always to the thinner
+    // bench so a night of lopsided replies still comes out even.
+    const byPosition = (position: PlayerPosition) =>
+      undecided.filter((rsvp) => rsvp.player.position === position);
 
     for (const group of [byPosition("goalie"), byPosition("skater")]) {
       for (const rsvp of group) {
-        assignments.push({ id: rsvp.id, teamId: teams[cursor % teams.length].id });
-        cursor += 1;
+        const thinnest = teams.reduce((smallest, team) =>
+          (sizes.get(team.id) ?? 0) < (sizes.get(smallest.id) ?? 0) ? team : smallest,
+        );
+
+        assignments.push({ id: rsvp.id, teamId: thinnest.id });
+        sizes.set(thinnest.id, (sizes.get(thinnest.id) ?? 0) + 1);
       }
     }
 
@@ -214,7 +234,11 @@ export async function autoSplitTeams(_prev: ActionState, formData: FormData): Pr
       .maybeSingle<Pick<Game, "rsvp_token">>();
 
     refreshGame(gameId, game?.rsvp_token);
-    return { ok: true, message: "Teams split — adjust anything that looks off, then publish." };
+    return {
+      ok: true,
+      message:
+        "Sides set. Everyone kept their usual team; anyone without one went to the thinner bench.",
+    };
   });
 }
 
@@ -352,6 +376,7 @@ export async function savePlayer(_prev: ActionState, formData: FormData): Promis
     const position = String(formData.get("position") ?? "skater") as PlayerPosition;
     const jerseyRaw = String(formData.get("jerseyNumber") ?? "").trim();
     const isActive = String(formData.get("isActive") ?? "") !== "false";
+    const defaultTeamId = String(formData.get("defaultTeamId") ?? "").trim();
 
     if (fullName.length < 2) return { ok: false, message: "A player needs a name." };
 
@@ -361,6 +386,7 @@ export async function savePlayer(_prev: ActionState, formData: FormData): Promis
       position,
       jersey_number: jerseyRaw === "" ? null : Number(jerseyRaw),
       is_active: isActive,
+      default_team_id: defaultTeamId || null,
     };
 
     const db = supabaseAdmin();
