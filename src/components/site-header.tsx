@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { getViewer } from "@/lib/auth";
@@ -42,8 +43,16 @@ export async function SiteHeader() {
     <header className="border-b border-rink-800 bg-rink-950/80 backdrop-blur">
       <div className="mx-auto w-full max-w-5xl px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="text-lg font-bold tracking-tight">
-            VHL<span className="text-ice-400">PRO</span>
+          <Link href="/" aria-label="VHL Pro — home" className="shrink-0">
+            {/* Sized by height; the width follows the artwork's proportions. */}
+            <Image
+              src="/vhlpro-logo.png"
+              alt="VHL Pro"
+              width={419}
+              height={96}
+              priority
+              className="h-7 w-auto sm:h-8"
+            />
           </Link>
 
           {/* Wide enough for one row: links between the logo and the account. */}
