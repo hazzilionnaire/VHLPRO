@@ -5,7 +5,12 @@ import { TeamRosters } from "@/components/roster-lists";
 import { ScoreLine } from "@/components/score-line";
 import { SetupNotice } from "@/components/setup-notice";
 import { Card, EmptyState, Pill, SectionHeading } from "@/components/ui";
-import { describeCountdown, formatGameDateLong, formatGameTime } from "@/lib/datetime";
+import {
+  describeCountdown,
+  formatGameDate,
+  formatGameDateLong,
+  formatGameTime,
+} from "@/lib/datetime";
 import { supabaseConfigured } from "@/lib/env";
 import {
   describeDatabaseFailure,
@@ -93,16 +98,25 @@ function TeamStat({
   );
 }
 
-/** The line a player sees after answering, built from ids we trust. */
+/**
+ * The line a player sees after answering, built from ids we trust. It names
+ * the date, because answers can be given weeks ahead and "you're in" alone
+ * doesn't say what for.
+ */
 function rsvpConfirmation(
   status: string | undefined,
   teamName: string | null,
+  when: string | null,
 ): string | null {
-  if (status === "out") return "Marked as out. Thanks for letting us know.";
-  if (status === "maybe") return "Marked as a maybe — update it when you know.";
+  const forGame = when ? ` for ${when}` : "";
+
+  if (status === "out") return `Marked as out${forGame}. Thanks for letting us know.`;
+  if (status === "maybe") return `Marked as a maybe${forGame} — update it when you know.`;
   if (status !== "in") return null;
 
-  return teamName ? `You're in, on ${teamName}. See you at the rink.` : "You're in. See you at the rink.";
+  return teamName
+    ? `You're in${forGame}, on ${teamName}. See you at the rink.`
+    : `You're in${forGame}. See you at the rink.`;
 }
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
@@ -138,12 +152,19 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const skatersIn = playingIn.filter((rsvp) => rsvp.player.position === "skater").length;
   const goaliesIn = playingIn.filter((rsvp) => rsvp.player.position === "goalie").length;
 
-  // Organizers watch the sides fill up as answers come in; everyone else sees
-  // them once the admin is happy with the split and publishes.
-  const { rsvp, team: teamId } = await searchParams;
+  const { rsvp, team: teamId, g: answeredToken } = await searchParams;
+
+  // Back to the game they actually answered, which may be weeks out, not
+  // whichever one happens to be next.
+  const answeredGame =
+    typeof answeredToken === "string"
+      ? upcoming.find((game) => game.rsvp_token === answeredToken)
+      : undefined;
+
   const confirmation = rsvpConfirmation(
     typeof rsvp === "string" ? rsvp : undefined,
     teams.find((candidate) => candidate.id === teamId)?.name ?? null,
+    answeredGame ? formatGameDate(answeredGame.starts_at) : null,
   );
 
   return (
@@ -151,11 +172,11 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       {confirmation && (
         <p className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-200">
           {confirmation}
-          {nextGame && (
+          {(answeredGame ?? nextGame) && (
             <>
               {" "}
               <Link
-                href={`/rsvp/${nextGame.rsvp_token}`}
+                href={`/rsvp/${(answeredGame ?? nextGame).rsvp_token}`}
                 className="underline underline-offset-2 hover:text-emerald-100"
               >
                 Change your answer
@@ -204,7 +225,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
       {nextGame && (
         <section>
-          <SectionHeading title="Who's in" />
+          {/* Named, because answers can be in for several weeks at once. */}
+          <SectionHeading title={`Who's in · ${formatGameDate(nextGame.starts_at)}`} />
           <TeamRosters rsvps={playingIn} teams={teams} />
         </section>
       )}

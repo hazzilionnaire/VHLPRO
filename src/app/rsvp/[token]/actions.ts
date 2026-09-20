@@ -107,7 +107,9 @@ export async function submitRsvp(
   // Answering hands them back to the league's front page. The confirmation
   // travels in the URL so it survives the trip — the team is looked up there
   // by id, not taken from the link, so nothing arbitrary can be put on screen.
-  const params = new URLSearchParams({ rsvp: status });
+  // Carry the game's own token so "change your answer" comes back here, and
+  // not to whichever game happens to be next.
+  const params = new URLSearchParams({ rsvp: status, g: token });
   if (status === "in" && teamId) params.set("team", teamId);
 
   redirect(`/?${params.toString()}`);
