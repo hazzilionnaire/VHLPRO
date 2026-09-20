@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HelpWidget } from "@/components/help-widget";
 import { getViewer } from "@/lib/auth";
 import { supabaseConfigured } from "@/lib/env";
 
@@ -15,7 +16,11 @@ function NavLinks({ className }: { className: string }) {
   return (
     <nav className={className}>
       {links.map((link) => (
-        <Link key={link.href} href={link.href} className="text-muted transition hover:text-chalk">
+        <Link
+          key={link.href}
+          href={link.href}
+          className="text-muted transition hover:text-chalk"
+        >
           {link.label}
         </Link>
       ))}
@@ -24,7 +29,9 @@ function NavLinks({ className }: { className: string }) {
 }
 
 export async function SiteHeader() {
-  const viewer = supabaseConfigured() ? await getViewer().catch(() => null) : null;
+  const viewer = supabaseConfigured()
+    ? await getViewer().catch(() => null)
+    : null;
 
   const account = viewer ? (
     <Link
@@ -34,37 +41,48 @@ export async function SiteHeader() {
       Admin
     </Link>
   ) : (
-    <Link href="/login" className="text-xs text-muted transition hover:text-chalk">
+    <Link
+      href="/login"
+      className="text-xs text-muted transition hover:text-chalk"
+    >
       Sign in
     </Link>
   );
 
   return (
-    <header className="border-b border-rink-800 bg-rink-950/80 backdrop-blur">
-      <div className="mx-auto w-full max-w-5xl px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex items-center justify-between gap-4">
-          <Link href="/" aria-label="VHL Pro — home" className="shrink-0">
-            {/* Sized by height; the width follows the artwork's proportions. */}
-            <Image
-              src="/vhlpro-logo.png"
-              alt="VHL Pro"
-              width={419}
-              height={96}
-              priority
-              className="h-7 w-auto sm:h-8"
-            />
-          </Link>
+    <>
+      <header className="border-b border-rink-800 bg-rink-950/80 backdrop-blur">
+        <div className="mx-auto w-full max-w-5xl px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/" aria-label="VHL Pro — home" className="shrink-0">
+              {/* Sized by height; the width follows the artwork's proportions. */}
+              <Image
+                src="/vhlpro-logo.png"
+                alt="VHL Pro"
+                width={419}
+                height={96}
+                priority
+                className="h-7 w-auto sm:h-8"
+              />
+            </Link>
 
-          {/* Wide enough for one row: links between the logo and the account. */}
-          <NavLinks className="hidden flex-1 items-center gap-x-5 text-sm sm:flex" />
+            {/* Wide enough for one row: links between the logo and the account. */}
+            <NavLinks className="hidden flex-1 items-center gap-x-5 text-sm sm:flex" />
 
-          {account}
-        </div>
+            {account}
+          </div>
 
-        {/* On a phone the four links don't fit beside the logo, so they get a
+          {/* On a phone the four links don't fit beside the logo, so they get a
             row of their own and spread across it rather than wrapping. */}
-        <NavLinks className="mt-3 flex items-center justify-between gap-2 text-sm sm:hidden" />
-      </div>
-    </header>
+          <NavLinks className="mt-3 flex items-center justify-between gap-2 text-sm sm:hidden" />
+        </div>
+      </header>
+
+      {/* A sibling of the header, not a child: the header's backdrop-blur
+          makes it the containing block for anything fixed inside it, which
+          would anchor this to the header rather than the viewport. It lives
+          out here because this is where we already know the viewer's role. */}
+      <HelpWidget isOrganizer={viewer !== null} />
+    </>
   );
 }
