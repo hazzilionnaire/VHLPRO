@@ -19,6 +19,26 @@ import {
 
 export const dynamic = "force-dynamic";
 
+/** One figure from a team's record, label under the number. */
+function TeamStat({
+  label,
+  value,
+  emphasis = false,
+}: {
+  label: string;
+  value: number;
+  emphasis?: boolean;
+}) {
+  return (
+    <span className="flex w-8 flex-col items-center">
+      <span className={`tabular ${emphasis ? "text-lg font-bold" : "text-base font-medium"}`}>
+        {value}
+      </span>
+      <span className="text-[10px] tracking-wider text-muted uppercase">{label}</span>
+    </span>
+  );
+}
+
 /** The line a player sees after answering, built from ids we trust. */
 function rsvpConfirmation(
   status: string | undefined,
@@ -138,10 +158,13 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           }
         />
         {standings.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <Card className="divide-y divide-rink-800 p-0">
             {standings.map((row) => (
-              <Card key={row.team_id} className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 font-semibold">
+              <div
+                key={row.team_id}
+                className="flex flex-wrap items-center justify-between gap-4 px-5 py-4"
+              >
+                <span className="inline-flex items-center gap-2.5 font-semibold">
                   <span
                     className="h-3 w-3 rounded-full ring-1 ring-white/25"
                     style={{ backgroundColor: row.color }}
@@ -149,12 +172,15 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
                   />
                   {row.team_name}
                 </span>
-                <span className="tabular text-sm text-muted">
-                  {row.wins}-{row.losses}-{row.ties}
+                <span className="flex items-center gap-5">
+                  <TeamStat label="W" value={row.wins} />
+                  <TeamStat label="L" value={row.losses} />
+                  <TeamStat label="T" value={row.ties} />
+                  <TeamStat label="PTS" value={row.points} emphasis />
                 </span>
-              </Card>
+              </div>
             ))}
-          </div>
+          </Card>
         ) : (
           <EmptyState>No games have been finalized yet this season.</EmptyState>
         )}
