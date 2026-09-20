@@ -11,13 +11,67 @@ import {
   describeDatabaseFailure,
   getActiveSeason,
   getNextGame,
+  getPlayerTotals,
   getRecentResults,
   getRsvps,
   getStandings,
   getTeams,
 } from "@/lib/queries";
+import type { PlayerTotal } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Everyone level at the top of a column. Returns nobody while the figure is
+ * still zero — a league where no one has scored has no scoring leader.
+ */
+function leadersBy(
+  rows: PlayerTotal[],
+  key: "goals" | "games_played",
+): { value: number; names: string[] } {
+  const best = rows.reduce((highest, row) => Math.max(highest, row[key]), 0);
+  if (best <= 0) return { value: 0, names: [] };
+
+  return {
+    value: best,
+    names: rows.filter((row) => row[key] === best).map((row) => row.full_name),
+  };
+}
+
+function LeaderCard({
+  title,
+  unit,
+  leaders,
+}: {
+  title: string;
+  unit: string;
+  leaders: { value: number; names: string[] };
+}) {
+  // A whole roster tied on games played is normal early on, and unreadable.
+  const shown = leaders.names.slice(0, 3);
+  const rest = leaders.names.length - shown.length;
+
+  return (
+    <Card>
+      <h3 className="text-xs font-semibold tracking-[0.18em] text-muted uppercase">{title}</h3>
+
+      {leaders.names.length === 0 ? (
+        <p className="mt-3 text-sm text-muted">Nothing to go on yet.</p>
+      ) : (
+        <>
+          <p className="mt-3 flex items-baseline gap-2">
+            <span className="tabular text-2xl font-bold">{leaders.value}</span>
+            <span className="text-xs text-muted">{unit}</span>
+          </p>
+          <p className="mt-1 text-sm">
+            {shown.join(", ")}
+            {rest > 0 && <span className="text-muted"> +{rest} more</span>}
+          </p>
+        </>
+      )}
+    </Card>
+  );
+}
 
 /** One figure from a team's record, label under the number. */
 function TeamStat({
@@ -65,12 +119,16 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     );
   }
 
-  const [teams, nextGame, results, standings] = await Promise.all([
+  const [teams, nextGame, results, standings, totals] = await Promise.all([
     getTeams(),
     getNextGame(season.id),
     getRecentResults(season.id, 4),
     getStandings(season.id),
+    getPlayerTotals(season.id),
   ]);
+
+  const goalLeaders = leadersBy(totals, "goals");
+  const appearanceLeaders = leadersBy(totals, "games_played");
 
   const rsvps = nextGame ? await getRsvps(nextGame.id) : [];
   const playingIn = rsvps.filter((rsvp) => rsvp.status === "in");
@@ -184,6 +242,21 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         ) : (
           <EmptyState>No games have been finalized yet this season.</EmptyState>
         )}
+      </section>
+
+      <section>
+        <SectionHeading
+          title="Leaders"
+          action={
+            <Link href="/stats" className="text-xs text-muted hover:text-chalk">
+              All stats
+            </Link>
+          }
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <LeaderCard title="Goals" unit="goals" leaders={goalLeaders} />
+          <LeaderCard title="Games played" unit="games" leaders={appearanceLeaders} />
+        </div>
       </section>
 
       <section>
