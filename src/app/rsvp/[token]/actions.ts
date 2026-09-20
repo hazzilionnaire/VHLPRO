@@ -62,7 +62,12 @@ export async function submitRsvp(
       .single<Pick<Player, "id">>();
 
     if (error || !created) {
-      return { ok: false, message: "Could not add you to the roster. Try again." };
+      return {
+        ok: false,
+        message: error?.message
+          ? `Could not add you to the roster: ${error.message}`
+          : "Could not add you to the roster. Try again.",
+      };
     }
     resolvedPlayerId = created.id;
   }
@@ -83,7 +88,7 @@ export async function submitRsvp(
   );
 
   if (rsvpError) {
-    return { ok: false, message: "Could not save your answer. Try again." };
+    return { ok: false, message: `Could not save your answer: ${rsvpError.message}` };
   }
 
   const cookieStore = await cookies();
