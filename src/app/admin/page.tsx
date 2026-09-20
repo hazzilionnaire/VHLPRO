@@ -1,10 +1,11 @@
 import Link from "next/link";
 
 import { CopyLink } from "@/components/copy-link";
+import { DatabaseError } from "@/components/database-error";
 import { Card, EmptyState, Pill, SectionHeading } from "@/components/ui";
 import { formatGameDateLong, formatGameTime } from "@/lib/datetime";
 import { getViewer } from "@/lib/auth";
-import { getActiveSeason, getInCounts, getSeasonGames } from "@/lib/queries";
+import { describeDatabaseFailure, getActiveSeason, getInCounts, getSeasonGames } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin" };
@@ -14,6 +15,9 @@ export default async function AdminGamesPage() {
   const season = await getActiveSeason();
 
   if (!season) {
+    const failure = await describeDatabaseFailure();
+    if (failure) return <DatabaseError message={failure} />;
+
     return (
       <EmptyState>
         No active season. Add one to the <code>seasons</code> table and mark it active.

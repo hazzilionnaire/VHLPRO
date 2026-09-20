@@ -1,11 +1,13 @@
 import Link from "next/link";
 
+import { DatabaseError } from "@/components/database-error";
 import { ScoreLine } from "@/components/score-line";
 import { SetupNotice } from "@/components/setup-notice";
 import { Card, EmptyState, Pill, SectionHeading } from "@/components/ui";
 import { describeCountdown, formatGameDateLong, formatGameTime } from "@/lib/datetime";
 import { supabaseConfigured } from "@/lib/env";
 import {
+  describeDatabaseFailure,
   getActiveSeason,
   getNextGame,
   getRecentResults,
@@ -21,6 +23,10 @@ export default async function HomePage() {
 
   const season = await getActiveSeason();
   if (!season) {
+    // An empty league and a locked-out one look identical from here.
+    const failure = await describeDatabaseFailure();
+    if (failure) return <DatabaseError message={failure} />;
+
     return (
       <EmptyState>No active season yet. An admin can start one from the admin area.</EmptyState>
     );

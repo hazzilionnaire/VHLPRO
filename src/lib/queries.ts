@@ -24,6 +24,26 @@ function rsvpClosed(game: GameWithScores): boolean {
   return new Date(deadline).getTime() < Date.now();
 }
 
+/**
+ * Why the database came back empty, or null if it didn't.
+ *
+ * Every table denies the anon key, so a wrong service role key reads back no
+ * rows and no error — a site that looks merely empty. Ask a question we know
+ * the answer to, and report what comes back instead.
+ */
+export async function describeDatabaseFailure(): Promise<string | null> {
+  // Ask for something only the service role may do. A public key pasted into
+  // the secret slot is still a *valid* key, so reads with it succeed and
+  // simply return nothing — the failure has to be provoked to be seen.
+  const { error: keyError } = await supabaseAdmin().auth.admin.listUsers({ perPage: 1 });
+  if (keyError) {
+    return `Supabase refused the server's key (${keyError.message}). It is not the secret key.`;
+  }
+
+  const { error } = await supabaseAdmin().from("seasons").select("id").limit(1);
+  return error ? error.message : null;
+}
+
 export async function getActiveSeason(): Promise<Season | null> {
   const { data } = await supabaseAdmin()
     .from("seasons")

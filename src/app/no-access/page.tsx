@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { DatabaseError } from "@/components/database-error";
 import { Card } from "@/components/ui";
 import { getViewer } from "@/lib/auth";
 import { supabaseConfigured } from "@/lib/env";
+import { describeDatabaseFailure } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "No access" };
@@ -10,9 +12,14 @@ export const metadata = { title: "No access" };
 export default async function NoAccessPage() {
   const viewer = supabaseConfigured() ? await getViewer().catch(() => null) : null;
 
+  // A role that can't be read looks exactly like a role that isn't there, and
+  // landing here is the first place most people notice something is wrong.
+  const failure = supabaseConfigured() ? await describeDatabaseFailure() : null;
+
   return (
     <div className="mx-auto max-w-md space-y-6 pt-6">
       <h1 className="text-2xl font-bold tracking-tight">Not your rink</h1>
+      {failure && <DatabaseError message={failure} />}
       <Card>
         <p className="text-sm text-muted">
           {viewer
