@@ -2,14 +2,13 @@ import { cookies } from "next/headers";
 
 import { SetupNotice } from "@/components/setup-notice";
 import { Card, EmptyState, SectionHeading } from "@/components/ui";
-import { formatGameDateLong } from "@/lib/datetime";
 import { supabaseConfigured } from "@/lib/env";
 import {
   getActiveSeason,
-  getGameStats,
-  getLastPlayedGame,
+  getGamesForStatEntry,
   getPlayerTotals,
   getPlayers,
+  getSeasonStats,
 } from "@/lib/queries";
 import { PLAYER_COOKIE } from "@/lib/rsvp-cookie";
 import type { PlayerTotal } from "@/lib/types";
@@ -24,14 +23,14 @@ export default async function StatsPage() {
   const season = await getActiveSeason();
   if (!season) return <EmptyState>No active season yet.</EmptyState>;
 
-  const [totals, lastGame, players, cookieStore] = await Promise.all([
+  const [totals, games, stats, players, cookieStore] = await Promise.all([
     getPlayerTotals(season.id),
-    getLastPlayedGame(season.id),
+    getGamesForStatEntry(season.id),
+    getSeasonStats(season.id),
     getPlayers(),
     cookies(),
   ]);
 
-  const existing = lastGame ? await getGameStats(lastGame.id) : [];
   const rememberedPlayerId = cookieStore.get(PLAYER_COOKIE)?.value ?? null;
 
   const skaters = totals.filter((row) => row.position === "skater");
@@ -44,19 +43,18 @@ export default async function StatsPage() {
         <p className="mt-1 text-sm text-muted">{season.name} season</p>
       </div>
 
-      {lastGame && players.length > 0 && (
+      {games.length > 0 && players.length > 0 && (
         <section>
-          <SectionHeading title="Add your line" />
+          <SectionHeading title="Your stats" />
           <Card>
             <p className="mb-4 text-sm text-muted">
-              For {formatGameDateLong(lastGame.starts_at)}
-              {lastGame.location ? ` at ${lastGame.location}` : ""}. Enter your own goals and
-              assists — the table below updates straight away.
+              Pick a game and enter your own goals and assists. You can come back and change them
+              any time — the tables below update straight away.
             </p>
             <StatEntryForm
-              gameId={lastGame.id}
+              games={games}
               players={players}
-              existing={existing}
+              stats={stats}
               rememberedPlayerId={rememberedPlayerId}
             />
           </Card>

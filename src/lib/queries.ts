@@ -258,19 +258,34 @@ export async function getPlayerTotals(seasonId: string): Promise<PlayerTotal[]> 
 }
 
 /**
- * The game players would be reporting on: the last one actually played. Used
- * by the self-entry form on the stats page.
+ * Games a player can file or amend a line for — anything not cancelled, most
+ * recent first, so the game just played is the one at the top.
  */
-export async function getLastPlayedGame(seasonId: string): Promise<Game | null> {
+export async function getGamesForStatEntry(seasonId: string): Promise<Game[]> {
   const { data } = await supabaseAdmin()
     .from("games")
     .select("*")
     .eq("season_id", seasonId)
     .neq("status", "cancelled")
-    .lte("starts_at", new Date().toISOString())
     .order("starts_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<Game>();
+    .returns<Game[]>();
 
-  return data ?? null;
+  return data ?? [];
+}
+
+/** Every line recorded this season, so the entry form can prefill any game. */
+export async function getSeasonStats(seasonId: string): Promise<GameStat[]> {
+  const games = await getGamesForStatEntry(seasonId);
+  if (games.length === 0) return [];
+
+  const { data } = await supabaseAdmin()
+    .from("game_stats")
+    .select("*")
+    .in(
+      "game_id",
+      games.map((game) => game.id),
+    )
+    .returns<GameStat[]>();
+
+  return data ?? [];
 }

@@ -38,11 +38,8 @@ export async function submitOwnStats(
       .eq("id", gameId)
       .maybeSingle<Pick<Game, "id" | "status" | "starts_at">>();
 
-    if (!game) return { ok: false, message: "That game is no longer available." };
+    if (!game) return { ok: false, message: "Pick a game first." };
     if (game.status === "cancelled") return { ok: false, message: "That game was cancelled." };
-    if (new Date(game.starts_at).getTime() > Date.now()) {
-      return { ok: false, message: "That game hasn't been played yet." };
-    }
 
     const { data: player } = await db
       .from("players")
