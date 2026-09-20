@@ -1,8 +1,19 @@
+import { cookies } from "next/headers";
+
 import { SetupNotice } from "@/components/setup-notice";
 import { Card, EmptyState, SectionHeading } from "@/components/ui";
+import { formatGameDateLong } from "@/lib/datetime";
 import { supabaseConfigured } from "@/lib/env";
-import { getActiveSeason, getPlayerTotals } from "@/lib/queries";
+import {
+  getActiveSeason,
+  getGameStats,
+  getLastPlayedGame,
+  getPlayerTotals,
+  getPlayers,
+} from "@/lib/queries";
+import { PLAYER_COOKIE } from "@/lib/rsvp-cookie";
 import type { PlayerTotal } from "@/lib/types";
+import { StatEntryForm } from "./stat-entry-form";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Stats" };
@@ -13,7 +24,16 @@ export default async function StatsPage() {
   const season = await getActiveSeason();
   if (!season) return <EmptyState>No active season yet.</EmptyState>;
 
-  const totals = await getPlayerTotals(season.id);
+  const [totals, lastGame, players, cookieStore] = await Promise.all([
+    getPlayerTotals(season.id),
+    getLastPlayedGame(season.id),
+    getPlayers(),
+    cookies(),
+  ]);
+
+  const existing = lastGame ? await getGameStats(lastGame.id) : [];
+  const rememberedPlayerId = cookieStore.get(PLAYER_COOKIE)?.value ?? null;
+
   const skaters = totals.filter((row) => row.position === "skater");
   const goalies = totals.filter((row) => row.position === "goalie");
 
@@ -21,17 +41,44 @@ export default async function StatsPage() {
     <div className="space-y-10">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Stats</h1>
-        <p className="mt-1 text-sm text-muted">{season.name} · finished games only</p>
+        <p className="mt-1 text-sm text-muted">{season.name} season</p>
       </div>
+
+      {lastGame && players.length > 0 && (
+        <section>
+          <SectionHeading title="Add your line" />
+          <Card>
+            <p className="mb-4 text-sm text-muted">
+              For {formatGameDateLong(lastGame.starts_at)}
+              {lastGame.location ? ` at ${lastGame.location}` : ""}. Enter your own goals and
+              assists — the table below updates straight away.
+            </p>
+            <StatEntryForm
+              gameId={lastGame.id}
+              players={players}
+              existing={existing}
+              rememberedPlayerId={rememberedPlayerId}
+            />
+          </Card>
+        </section>
+      )}
 
       <section>
         <SectionHeading title="Skaters" />
-        {skaters.length > 0 ? <SkaterTable rows={skaters} /> : <EmptyState>No skater stats recorded yet.</EmptyState>}
+        {skaters.length > 0 ? (
+          <SkaterTable rows={skaters} />
+        ) : (
+          <EmptyState>No skaters on the roster yet.</EmptyState>
+        )}
       </section>
 
       <section>
         <SectionHeading title="Goalies" />
-        {goalies.length > 0 ? <GoalieTable rows={goalies} /> : <EmptyState>No goalie stats recorded yet.</EmptyState>}
+        {goalies.length > 0 ? (
+          <GoalieTable rows={goalies} />
+        ) : (
+          <EmptyState>No goalies on the roster yet.</EmptyState>
+        )}
       </section>
     </div>
   );

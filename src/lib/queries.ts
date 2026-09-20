@@ -217,14 +217,60 @@ export async function getStandings(seasonId: string): Promise<TeamStanding[]> {
   );
 }
 
+/**
+ * Every active player, whether or not they've scored — the stats page doubles
+ * as the sheet each of them fills in, so nobody should have to be told why
+ * their name is missing.
+ */
 export async function getPlayerTotals(seasonId: string): Promise<PlayerTotal[]> {
-  const { data } = await supabaseAdmin()
-    .from("player_totals")
-    .select("*")
-    .eq("season_id", seasonId)
-    .returns<PlayerTotal[]>();
+  const [{ data }, players] = await Promise.all([
+    supabaseAdmin()
+      .from("player_totals")
+      .select("*")
+      .eq("season_id", seasonId)
+      .returns<PlayerTotal[]>(),
+    getPlayers(),
+  ]);
 
-  return (data ?? []).sort(
+  const recorded = new Map((data ?? []).map((row) => [row.player_id, row]));
+
+  const rows: PlayerTotal[] = players.map(
+    (player) =>
+      recorded.get(player.id) ?? {
+        season_id: seasonId,
+        player_id: player.id,
+        full_name: player.full_name,
+        position: player.position,
+        jersey_number: player.jersey_number,
+        games_played: 0,
+        goals: 0,
+        assists: 0,
+        points: 0,
+        pim: 0,
+        goals_against: 0,
+        shots_against: 0,
+      },
+  );
+
+  return rows.sort(
     (a, b) => b.points - a.points || b.goals - a.goals || a.full_name.localeCompare(b.full_name),
   );
+}
+
+/**
+ * The game players would be reporting on: the last one actually played. Used
+ * by the self-entry form on the stats page.
+ */
+export async function getLastPlayedGame(seasonId: string): Promise<Game | null> {
+  const { data } = await supabaseAdmin()
+    .from("games")
+    .select("*")
+    .eq("season_id", seasonId)
+    .neq("status", "cancelled")
+    .lte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<Game>();
+
+  return data ?? null;
 }
