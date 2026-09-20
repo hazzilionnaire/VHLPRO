@@ -176,14 +176,45 @@ export async function getPlayers(includeInactive = false): Promise<Player[]> {
   return data ?? [];
 }
 
+/**
+ * The standings view is built from finished games, so a team appears only once
+ * it has played. Carry every team through at 0-0-0 instead, so the table reads
+ * as a league waiting to start rather than a page that failed to load.
+ */
 export async function getStandings(seasonId: string): Promise<TeamStanding[]> {
-  const { data } = await supabaseAdmin()
-    .from("team_standings")
-    .select("*")
-    .eq("season_id", seasonId)
-    .returns<TeamStanding[]>();
+  const [{ data }, teams] = await Promise.all([
+    supabaseAdmin()
+      .from("team_standings")
+      .select("*")
+      .eq("season_id", seasonId)
+      .returns<TeamStanding[]>(),
+    getTeams(),
+  ]);
 
-  return (data ?? []).sort((a, b) => b.points - a.points || b.wins - a.wins || a.sort_order - b.sort_order);
+  const played = new Map((data ?? []).map((row) => [row.team_id, row]));
+
+  const rows: TeamStanding[] = teams.map(
+    (team) =>
+      played.get(team.id) ?? {
+        season_id: seasonId,
+        team_id: team.id,
+        team_name: team.name,
+        team_slug: team.slug,
+        color: team.color,
+        sort_order: team.sort_order,
+        games_played: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        goals_for: 0,
+        goals_against: 0,
+        points: 0,
+      },
+  );
+
+  return rows.sort(
+    (a, b) => b.points - a.points || b.wins - a.wins || a.sort_order - b.sort_order,
+  );
 }
 
 export async function getPlayerTotals(seasonId: string): Promise<PlayerTotal[]> {
