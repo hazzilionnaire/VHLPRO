@@ -15,6 +15,7 @@ import { supabaseConfigured } from "@/lib/env";
 import {
   describeDatabaseFailure,
   getActiveSeason,
+  getPlayers,
   getPlayerTotals,
   getUpcomingGames,
   getRecentResults,
@@ -147,7 +148,10 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const goalLeaders = leadersBy(totals, "goals");
   const appearanceLeaders = leadersBy(totals, "games_played");
 
-  const rsvps = nextGame ? await getRsvps(nextGame.id) : [];
+  const [rsvps, roster] = nextGame
+    ? await Promise.all([getRsvps(nextGame.id), getPlayers()])
+    : [[], []];
+
   const playingIn = rsvps.filter((rsvp) => rsvp.status === "in");
   const skatersIn = playingIn.filter((rsvp) => rsvp.player.position === "skater").length;
   const goaliesIn = playingIn.filter((rsvp) => rsvp.player.position === "goalie").length;
@@ -227,7 +231,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         <section>
           {/* Named, because answers can be in for several weeks at once. */}
           <SectionHeading title={`Who's in · ${formatGameDate(nextGame.starts_at)}`} />
-          <TeamRosters rsvps={playingIn} teams={teams} />
+          <TeamRosters rsvps={rsvps} teams={teams} players={roster} />
         </section>
       )}
 

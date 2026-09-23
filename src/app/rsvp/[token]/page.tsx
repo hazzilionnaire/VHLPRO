@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { PlayerList, TeamRosters } from "@/components/roster-lists";
+import { TeamRosters } from "@/components/roster-lists";
 import { SetupNotice } from "@/components/setup-notice";
 import { Card, Pill, SectionHeading } from "@/components/ui";
 import { formatGameDateLong, formatGameDateTime, formatGameTime } from "@/lib/datetime";
@@ -34,8 +34,6 @@ export default async function RsvpPage({ params }: PageProps<"/rsvp/[token]">) {
   const closed = game.rsvp_closed;
 
   const inList = rsvps.filter((rsvp) => rsvp.status === "in");
-  const maybeList = rsvps.filter((rsvp) => rsvp.status === "maybe");
-  const outList = rsvps.filter((rsvp) => rsvp.status === "out");
 
   return (
     <div className="space-y-8">
@@ -88,27 +86,11 @@ export default async function RsvpPage({ params }: PageProps<"/rsvp/[token]">) {
       )}
 
       <section>
+        {/* Each bench carries its own out, maybe and silent lists now, so
+            there's nothing left to repeat underneath. */}
         <SectionHeading title={`In · ${inList.length}`} />
-        <TeamRosters rsvps={inList} teams={teams} />
+        <TeamRosters rsvps={rsvps} teams={teams} players={players} />
       </section>
-
-      {maybeList.length > 0 && (
-        <section>
-          <SectionHeading title={`Maybe · ${maybeList.length}`} />
-          <Card>
-            <PlayerList rsvps={maybeList} empty="" />
-          </Card>
-        </section>
-      )}
-
-      {outList.length > 0 && (
-        <section>
-          <SectionHeading title={`Out · ${outList.length}`} />
-          <Card>
-            <PlayerList rsvps={outList} empty="" muted />
-          </Card>
-        </section>
-      )}
     </div>
   );
 }
