@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+
+import { describeGame, publishNews } from "@/lib/news";
 
 import { runAction, type ActionState } from "@/lib/action-guard";
 import { requireRole } from "@/lib/auth";
@@ -448,6 +451,12 @@ export async function saveResult(_prev: ActionState, formData: FormData): Promis
     if (statusError) {
       return fail("Saved the numbers, but could not close the game", statusError);
     }
+
+    // Written after the response goes back, so nobody waits on a headline.
+    after(async () => {
+      const facts = await describeGame(gameId);
+      if (facts) await publishNews(facts, { force: true });
+    });
 
     refreshGame(gameId, game?.rsvp_token);
     return { ok: true, message: "Result saved. Standings and stats are updated." };

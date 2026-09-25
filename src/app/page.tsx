@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DatabaseError } from "@/components/database-error";
+import { NewsBanner } from "@/components/news-banner";
 import { TeamRosters } from "@/components/roster-lists";
 import { ScoreLine } from "@/components/score-line";
 import { SetupNotice } from "@/components/setup-notice";
@@ -173,6 +174,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="space-y-10">
+      <NewsBanner />
+
       {confirmation && (
         <p className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-200">
           {confirmation}

@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { after } from "next/server";
+
+import { describePlayerLine, publishNews } from "@/lib/news";
 
 import { runAction, type ActionState } from "@/lib/action-guard";
 import { PLAYER_COOKIE, PLAYER_COOKIE_MAX_AGE } from "@/lib/rsvp-cookie";
@@ -86,6 +89,13 @@ export async function submitOwnStats(
       secure: process.env.NODE_ENV === "production",
       maxAge: PLAYER_COOKIE_MAX_AGE,
       path: "/",
+    });
+
+    // A quiet period inside publishNews keeps twenty players entering their
+    // own lines from becoming twenty write-ups.
+    after(async () => {
+      const facts = await describePlayerLine(game.id, player.id);
+      if (facts) await publishNews(facts);
     });
 
     revalidatePath("/stats");
