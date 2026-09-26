@@ -13,7 +13,11 @@ import { CopyLink } from "@/components/copy-link";
 import { TeamBadge } from "@/components/team-badge";
 import { Card, EmptyState, Pill, SectionHeading } from "@/components/ui";
 import { getViewer } from "@/lib/auth";
-import { LEAGUE_TIME_ZONE, formatGameDateLong, utcIsoToLeagueLocal } from "@/lib/datetime";
+import {
+  LEAGUE_TIME_ZONE,
+  formatGameDateLong,
+  utcIsoToLeagueLocal,
+} from "@/lib/datetime";
 import { getGameById, getGameStats, getRsvps, getTeams } from "@/lib/queries";
 import type { GameStat, RsvpWithPlayer, Team } from "@/lib/types";
 import { DeleteGame } from "./delete-game";
@@ -25,7 +29,9 @@ const field =
 const numberField =
   "w-16 rounded-lg border border-rink-700 bg-rink-850 px-2 py-1.5 text-center text-sm tabular outline-none focus:border-ice-500";
 
-export default async function AdminGamePage({ params }: PageProps<"/admin/games/[id]">) {
+export default async function AdminGamePage({
+  params,
+}: PageProps<"/admin/games/[id]">) {
   const { id } = await params;
   const viewer = await getViewer();
   const game = await getGameById(id);
@@ -52,7 +58,15 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
             {formatGameDateLong(game.starts_at)}
           </h1>
           <div className="flex items-center gap-3">
-            <Pill tone={game.status === "final" ? "neutral" : game.status === "cancelled" ? "bad" : "good"}>
+            <Pill
+              tone={
+                game.status === "final"
+                  ? "neutral"
+                  : game.status === "cancelled"
+                    ? "bad"
+                    : "good"
+              }
+            >
               {game.status}
             </Pill>
             <CopyLink path={`/rsvp/${game.rsvp_token}`} />
@@ -69,7 +83,10 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="startsAt" className="mb-1.5 block text-sm font-medium">
+                  <label
+                    htmlFor="startsAt"
+                    className="mb-1.5 block text-sm font-medium"
+                  >
                     Puck drop
                   </label>
                   <input
@@ -82,7 +99,10 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
                   />
                 </div>
                 <div>
-                  <label htmlFor="rsvpClosesAt" className="mb-1.5 block text-sm font-medium">
+                  <label
+                    htmlFor="rsvpClosesAt"
+                    className="mb-1.5 block text-sm font-medium"
+                  >
                     RSVP closes
                   </label>
                   <input
@@ -90,7 +110,9 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
                     name="rsvpClosesAt"
                     type="datetime-local"
                     defaultValue={
-                      game.rsvp_closes_at ? utcIsoToLeagueLocal(game.rsvp_closes_at) : ""
+                      game.rsvp_closes_at
+                        ? utcIsoToLeagueLocal(game.rsvp_closes_at)
+                        : ""
                     }
                     className={field}
                   />
@@ -99,7 +121,10 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="location" className="mb-1.5 block text-sm font-medium">
+                  <label
+                    htmlFor="location"
+                    className="mb-1.5 block text-sm font-medium"
+                  >
                     Rink
                   </label>
                   <input
@@ -110,10 +135,18 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
                   />
                 </div>
                 <div>
-                  <label htmlFor="status" className="mb-1.5 block text-sm font-medium">
+                  <label
+                    htmlFor="status"
+                    className="mb-1.5 block text-sm font-medium"
+                  >
                     Status
                   </label>
-                  <select id="status" name="status" defaultValue={game.status} className={field}>
+                  <select
+                    id="status"
+                    name="status"
+                    defaultValue={game.status}
+                    className={field}
+                  >
                     <option value="scheduled">Scheduled</option>
                     <option value="final">Final</option>
                     <option value="cancelled">Cancelled</option>
@@ -122,7 +155,10 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
               </div>
 
               <div>
-                <label htmlFor="notes" className="mb-1.5 block text-sm font-medium">
+                <label
+                  htmlFor="notes"
+                  className="mb-1.5 block text-sm font-medium"
+                >
                   Notes
                 </label>
                 <textarea
@@ -135,13 +171,18 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-muted">Times in {LEAGUE_TIME_ZONE.replace("_", " ")}.</p>
+                <p className="text-xs text-muted">
+                  Times in {LEAGUE_TIME_ZONE.replace("_", " ")}.
+                </p>
                 <SubmitButton>Save details</SubmitButton>
               </div>
             </ActionForm>
 
             <div className="mt-5 border-t border-rink-800 pt-4">
-              <DeleteGame gameId={game.id} label={formatGameDateLong(game.starts_at)} />
+              <DeleteGame
+                gameId={game.id}
+                label={formatGameDateLong(game.starts_at)}
+              />
             </div>
           </Card>
         </section>
@@ -200,6 +241,9 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
             <ActionForm action={saveResult}>
               <input type="hidden" name="gameId" value={game.id} />
 
+              <p className="mb-2 text-xs font-semibold tracking-wider text-muted uppercase">
+                Games won
+              </p>
               <div className="mb-6 grid gap-3 sm:grid-cols-2">
                 {teams.map((team) => (
                   <label
@@ -211,7 +255,10 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
                       type="number"
                       min={0}
                       name={`score_${team.id}`}
-                      defaultValue={game.scores.find((s) => s.team_id === team.id)?.goals ?? 0}
+                      defaultValue={
+                        game.scores.find((s) => s.team_id === team.id)?.goals ??
+                        0
+                      }
                       className={numberField}
                     />
                   </label>
@@ -237,7 +284,11 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
                         key={rsvp.id}
                         rsvp={rsvp}
                         teams={teams}
-                        stat={stats.find((row) => row.player_id === rsvp.player_id) ?? null}
+                        stat={
+                          stats.find(
+                            (row) => row.player_id === rsvp.player_id,
+                          ) ?? null
+                        }
                       />
                     ))}
                   </tbody>
@@ -253,19 +304,29 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
             </ActionForm>
           </Card>
         ) : (
-          <EmptyState>No one is down as playing, so there&apos;s nothing to score yet.</EmptyState>
+          <EmptyState>
+            No one is down as playing, so there&apos;s nothing to score yet.
+          </EmptyState>
         )}
       </section>
     </div>
   );
 }
 
-function AllocationRow({ rsvp, teams }: { rsvp: RsvpWithPlayer; teams: Team[] }) {
+function AllocationRow({
+  rsvp,
+  teams,
+}: {
+  rsvp: RsvpWithPlayer;
+  teams: Team[];
+}) {
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 py-2.5">
       <span className="flex items-baseline gap-2">
         <span className="font-medium">{rsvp.player.full_name}</span>
-        {rsvp.player.position === "goalie" && <span className="text-xs text-ice-400">Goalie</span>}
+        {rsvp.player.position === "goalie" && (
+          <span className="text-xs text-ice-400">Goalie</span>
+        )}
         {rsvp.note && <span className="text-xs text-muted">· {rsvp.note}</span>}
       </span>
 

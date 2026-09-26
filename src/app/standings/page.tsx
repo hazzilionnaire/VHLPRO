@@ -19,7 +19,8 @@ export default async function StandingsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Standings</h1>
         <p className="mt-1 text-sm text-muted">
-          {season.name} · two points for a win, one for a tie
+          {season.name} · a night is won by taking more of its games · two
+          points for a win, one for a tie
         </p>
       </div>
 
@@ -33,8 +34,6 @@ export default async function StandingsPage() {
                 <th className="px-3 py-3 text-right font-medium">W</th>
                 <th className="px-3 py-3 text-right font-medium">L</th>
                 <th className="px-3 py-3 text-right font-medium">T</th>
-                <th className="px-3 py-3 text-right font-medium">GF</th>
-                <th className="px-3 py-3 text-right font-medium">GA</th>
                 <th className="px-5 py-3 text-right font-medium">PTS</th>
               </tr>
             </thead>
@@ -51,13 +50,15 @@ export default async function StandingsPage() {
                       {row.team_name}
                     </span>
                   </td>
-                  <td className="px-3 py-3 text-right text-muted">{row.games_played}</td>
+                  <td className="px-3 py-3 text-right text-muted">
+                    {row.games_played}
+                  </td>
                   <td className="px-3 py-3 text-right">{row.wins}</td>
                   <td className="px-3 py-3 text-right">{row.losses}</td>
                   <td className="px-3 py-3 text-right">{row.ties}</td>
-                  <td className="px-3 py-3 text-right text-muted">{row.goals_for}</td>
-                  <td className="px-3 py-3 text-right text-muted">{row.goals_against}</td>
-                  <td className="px-5 py-3 text-right font-semibold">{row.points}</td>
+                  <td className="px-5 py-3 text-right font-semibold">
+                    {row.points}
+                  </td>
                 </tr>
               ))}
             </tbody>
