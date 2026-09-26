@@ -3,8 +3,8 @@ import { formatGameDate } from "@/lib/datetime";
 
 /**
  * The most recent line written about the league, across the top of the page.
- * Marked as written by a machine, because it is, and because it's drawn from
- * a scoresheet someone typed in — it can be as wrong as the numbers are.
+ * Generated from the recorded stats, so it's only ever as accurate as the
+ * scoresheet someone typed in.
  */
 export async function NewsBanner() {
   const news = await getLatestNews().catch(() => null);
@@ -21,8 +21,6 @@ export async function NewsBanner() {
 
       <p className="mt-2 text-lg leading-snug font-semibold text-chalk">{news.headline}</p>
       {news.body && <p className="mt-1 text-sm text-muted">{news.body}</p>}
-
-      <p className="mt-3 text-[10px] text-rink-600">Written by AI from the recorded stats</p>
     </section>
   );
 }
