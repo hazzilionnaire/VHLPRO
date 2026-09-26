@@ -25,13 +25,17 @@ const QUIET_PERIOD_MS = 15 * 60 * 1000;
 
 const SYSTEM_PROMPT = `You write one-line news for a Friday-night work hockey league. Two teams, Blue and White, same players most weeks.
 
+How the night works, and it is not the usual thing: they play a series of short games rather than one long one, and the score is how many of those games each side won. "Blue 3 — White 1" means Blue took three of the games played that night. It is not a goal count.
+
+So a player's goals are counted separately and can far exceed the score. Someone scoring 5 goals on a 3-1 night is ordinary, not a contradiction — never treat it as one, never call the score goals, and never do arithmetic between the two.
+
 Given the facts of what just happened, write:
 - Line 1: a headline, under 70 characters, no final period.
 - Line 2: one sentence, under 200 characters.
 
 Write nothing else — no labels, no quote marks, no preamble.
 
-When a final score is given, always name it, in the headline or the sentence. It is the one thing such a line must carry.
+When a result is given, always name it, in the headline or the sentence. It is the one thing such a line must carry. Phrase it as games won — "Blue took it 3-1", "White edged the night 3-2" — never as a goal score.
 
 Be warm and a little playful, the way a teammate would be. Never invent a fact you weren't given: no invented scorers, saves, streaks or history. If the facts are thin, say something small and true rather than padding it.
 
@@ -157,7 +161,7 @@ export async function describeGame(gameId: string): Promise<string | null> {
 
   return [
     `Game played ${new Date(game.starts_at).toDateString()}${game.location ? ` at ${game.location}` : ""}.`,
-    score ? `Final score: ${score}.` : "No score recorded.",
+    score ? `Games won on the night: ${score}.` : "No result recorded.",
     scorers.length > 0 ? `Recorded so far — ${scorers.join("; ")}.` : "No player stats recorded yet.",
   ].join("\n");
 }
@@ -188,7 +192,7 @@ export async function describePlayerLine(
 
   return [
     `Game played ${new Date(game.starts_at).toDateString()}.`,
-    `Final score: ${score}.`,
+    `Games won on the night: ${score}.`,
     `${stat.player.full_name} has just recorded their line: ${stat.goals} goals, ${stat.assists} assists, ${stat.pim} penalty minutes.`,
   ].join("\n");
 }
