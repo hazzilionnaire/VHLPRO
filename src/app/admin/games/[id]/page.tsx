@@ -18,8 +18,13 @@ import {
   formatGameDateLong,
   utcIsoToLeagueLocal,
 } from "@/lib/datetime";
-import { getGameById, getGameStats, getRsvps, getTeams } from "@/lib/queries";
-import type { GameStat, RsvpWithPlayer, Team } from "@/lib/types";
+import {
+  getGameById,
+  getGameStatsWithPlayers,
+  getRsvps,
+  getTeams,
+} from "@/lib/queries";
+import type { GameStat, Player, RsvpWithPlayer, Team } from "@/lib/types";
 import { DeleteGame } from "./delete-game";
 
 export const dynamic = "force-dynamic";
@@ -41,11 +46,35 @@ export default async function AdminGamePage({
   const [teams, rsvps, stats] = await Promise.all([
     getTeams(),
     getRsvps(game.id),
-    getGameStats(game.id),
+    getGameStatsWithPlayers(game.id),
   ]);
 
   const isAdmin = viewer?.role === "admin";
   const playing = rsvps.filter((rsvp) => rsvp.status === "in");
+
+  // The sheet is everyone who said they were coming, plus anyone who has
+  // recorded a line without saying so. Leaving the second group out hid their
+  // numbers here while still counting them in the season totals.
+  const onSheet: {
+    player: Player;
+    teamId: string | null;
+    stat: GameStat | null;
+  }[] = [
+    ...playing.map((rsvp) => ({
+      player: rsvp.player,
+      teamId: rsvp.team_id ?? rsvp.player.default_team_id,
+      stat: stats.find((row) => row.player_id === rsvp.player_id) ?? null,
+    })),
+    ...stats
+      .filter(
+        (row) => !playing.some((rsvp) => rsvp.player_id === row.player_id),
+      )
+      .map((row) => ({
+        player: row.player,
+        teamId: row.team_id ?? row.player.default_team_id,
+        stat: row,
+      })),
+  ].sort((a, b) => a.player.full_name.localeCompare(b.player.full_name));
 
   return (
     <div className="space-y-10">
@@ -279,16 +308,13 @@ export default async function AdminGamePage({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-rink-800">
-                    {playing.map((rsvp) => (
+                    {onSheet.map((entry) => (
                       <StatRow
-                        key={rsvp.id}
-                        rsvp={rsvp}
+                        key={entry.player.id}
+                        player={entry.player}
+                        teamId={entry.teamId}
                         teams={teams}
-                        stat={
-                          stats.find(
-                            (row) => row.player_id === rsvp.player_id,
-                          ) ?? null
-                        }
+                        stat={entry.stat}
                       />
                     ))}
                   </tbody>
@@ -362,24 +388,26 @@ function AllocationRow({
 }
 
 function StatRow({
-  rsvp,
+  player,
+  teamId,
   teams,
   stat,
 }: {
-  rsvp: RsvpWithPlayer;
+  player: Player;
+  teamId: string | null;
   teams: Team[];
   stat: GameStat | null;
 }) {
-  const isGoalie = rsvp.player.position === "goalie";
-  const playerId = rsvp.player_id;
+  const isGoalie = player.position === "goalie";
+  const playerId = player.id;
 
   return (
     <tr>
-      <td className="py-2 pr-2 font-medium">{rsvp.player.full_name}</td>
+      <td className="py-2 pr-2 font-medium">{player.full_name}</td>
       <td className="px-2 py-2">
         <select
           name={`statteam_${playerId}`}
-          defaultValue={stat?.team_id ?? rsvp.team_id ?? ""}
+          defaultValue={stat?.team_id ?? teamId ?? ""}
           className="rounded-lg border border-rink-700 bg-rink-850 px-2 py-1.5 text-sm outline-none focus:border-ice-500"
         >
           <option value="">—</option>

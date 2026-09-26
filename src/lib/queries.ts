@@ -174,6 +174,22 @@ export async function getRsvps(gameId: string): Promise<RsvpWithPlayer[]> {
   return (data ?? []).sort((a, b) => a.player.full_name.localeCompare(b.player.full_name));
 }
 
+/**
+ * Recorded lines with the player attached, for the admin sheet — which must
+ * show anyone who has stats, not only those who said they were coming.
+ */
+export async function getGameStatsWithPlayers(
+  gameId: string,
+): Promise<(GameStat & { player: Player })[]> {
+  const { data } = await supabaseAdmin()
+    .from("game_stats")
+    .select("*, player:players(*)")
+    .eq("game_id", gameId)
+    .returns<(GameStat & { player: Player })[]>();
+
+  return (data ?? []).filter((row) => row.player);
+}
+
 export async function getGameStats(gameId: string): Promise<GameStat[]> {
   const { data } = await supabaseAdmin()
     .from("game_stats")
