@@ -31,11 +31,13 @@ So a player's goals are counted separately and can far exceed the score. Someone
 
 Given the facts of what just happened, write:
 - Line 1: a headline, under 70 characters, no final period.
-- Line 2: one sentence, under 200 characters.
+- Line 2: one or two sentences, under 260 characters, with room for the result, who did something, and any penalty minutes.
 
 Write nothing else — no labels, no quote marks, no preamble.
 
 When a result is given, always name it, in the headline or the sentence. It is the one thing such a line must carry. Phrase it as games won — "Blue took it 3-1", "White edged the night 3-2" — never as a goal score.
+
+Penalty minutes are part of the story. When any were taken, say so — who, and how many — alongside the result. When the night was clean, you may note that or leave it; never invent a penalty that isn't in the facts.
 
 Be warm and a little playful, the way a teammate would be. Never invent a fact you weren't given: no invented scorers, saves, streaks or history. If the facts are thin, say something small and true rather than padding it.
 
@@ -146,23 +148,30 @@ export async function describeGame(gameId: string): Promise<string | null> {
 
   const { data: lines } = await db
     .from("game_stats")
-    .select("goals, assists, player:players(full_name)")
+    .select("goals, assists, pim, player:players(full_name)")
     .eq("game_id", gameId)
     .order("goals", { ascending: false })
-    .limit(6)
-    .returns<StatLine[]>();
+    .limit(12)
+    .returns<(StatLine & { pim: number })[]>();
 
-  const scorers = (lines ?? [])
-    .filter((line) => line.player && line.goals + line.assists > 0)
-    .map(
-      (line) =>
-        `${line.player?.full_name}: ${line.goals} goal${line.goals === 1 ? "" : "s"}, ${line.assists} assist${line.assists === 1 ? "" : "s"}`,
-    );
+  // Anyone who did anything at all, penalties included — a player whose whole
+  // night was four minutes in the box is worth a mention too.
+  const recorded = (lines ?? []).filter(
+    (line) => line.player && line.goals + line.assists + line.pim > 0,
+  );
+
+  const summary = recorded.map(
+    (line) =>
+      `${line.player?.full_name}: ${line.goals} goals, ${line.assists} assists, ${line.pim} penalty minutes`,
+  );
+
+  const boxTime = recorded.reduce((total, line) => total + line.pim, 0);
 
   return [
     `Game played ${new Date(game.starts_at).toDateString()}${game.location ? ` at ${game.location}` : ""}.`,
     score ? `Games won on the night: ${score}.` : "No result recorded.",
-    scorers.length > 0 ? `Recorded so far — ${scorers.join("; ")}.` : "No player stats recorded yet.",
+    summary.length > 0 ? `Recorded so far — ${summary.join("; ")}.` : "No player stats recorded yet.",
+    `Penalty minutes across the night: ${boxTime}.`,
   ].join("\n");
 }
 
