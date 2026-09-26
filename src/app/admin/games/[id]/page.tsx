@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { autoSplitTeams, saveResult, saveTeamAssignments, updateGame } from "@/app/admin/actions";
+import {
+  autoSplitTeams,
+  saveResult,
+  saveTeamAssignments,
+  updateGame,
+  writeNewsNow,
+} from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { CopyLink } from "@/components/copy-link";
 import { TeamBadge } from "@/components/team-badge";
@@ -176,7 +182,19 @@ export default async function AdminGamePage({ params }: PageProps<"/admin/games/
       )}
 
       <section>
-        <SectionHeading title="Result" />
+        <SectionHeading
+          title="Result"
+          action={
+            isAdmin ? (
+              <ActionForm action={writeNewsNow}>
+                <input type="hidden" name="gameId" value={game.id} />
+                <SubmitButton variant="ghost" className="px-3 py-1.5 text-xs">
+                  Write the news line
+                </SubmitButton>
+              </ActionForm>
+            ) : null
+          }
+        />
         {playing.length > 0 ? (
           <Card>
             <ActionForm action={saveResult}>

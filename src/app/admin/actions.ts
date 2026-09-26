@@ -525,6 +525,37 @@ export async function setPlayerActive(_prev: ActionState, formData: FormData): P
   });
 }
 
+/* --------------------------------------------------------------- news --- */
+
+/**
+ * Write the home page line on demand, from whatever this game currently
+ * holds. For when the banner is empty or has fallen behind — a result saved
+ * before the stats came in, or an item deleted by hand.
+ */
+export async function writeNewsNow(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    await requireRole(["admin"]);
+
+    const gameId = String(formData.get("gameId") ?? "");
+    if (!gameId) return { ok: false, message: "Missing game." };
+
+    const facts = await describeGame(gameId);
+    if (!facts) return { ok: false, message: "There's nothing recorded for this game yet." };
+
+    const written = await publishNews(facts, { force: true });
+    if (!written) {
+      return {
+        ok: false,
+        message:
+          "Couldn't write it. Check ANTHROPIC_API_KEY is set in the host, then look at the runtime logs.",
+      };
+    }
+
+    revalidatePath("/");
+    return { ok: true, message: "Written — it's on the home page now." };
+  });
+}
+
 /* -------------------------------------------------------------- teams --- */
 
 export async function saveTeamCaptain(

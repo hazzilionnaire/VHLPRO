@@ -31,7 +31,7 @@ Given the facts of what just happened, write:
 
 Write nothing else — no labels, no quote marks, no preamble.
 
-Always name the final score, in the headline or the sentence. It is the one thing every line must carry.
+When a final score is given, always name it, in the headline or the sentence. It is the one thing such a line must carry.
 
 Be warm and a little playful, the way a teammate would be. Never invent a fact you weren't given: no invented scorers, saves, streaks or history. If the facts are thin, say something small and true rather than padding it.
 
@@ -51,14 +51,15 @@ async function lastPublishedAt(): Promise<number | null> {
 /**
  * Write a line about what just happened and store it. Never throws: a league
  * that can't reach the model still has a working site, it just has no news.
+ * Returns whether anything was written, so a hand-pressed button can say.
  */
-export async function publishNews(facts: string, { force = false } = {}): Promise<void> {
-  if (!newsConfigured()) return;
+export async function publishNews(facts: string, { force = false } = {}): Promise<boolean> {
+  if (!newsConfigured()) return false;
 
   try {
     if (!force) {
       const last = await lastPublishedAt();
-      if (last !== null && Date.now() - last < QUIET_PERIOD_MS) return;
+      if (last !== null && Date.now() - last < QUIET_PERIOD_MS) return false;
     }
 
     const client = new Anthropic();
@@ -71,7 +72,7 @@ export async function publishNews(facts: string, { force = false } = {}): Promis
       messages: [{ role: "user", content: facts }],
     });
 
-    if (response.stop_reason === "refusal") return;
+    if (response.stop_reason === "refusal") return false;
 
     const text = response.content
       .filter((block) => block.type === "text")
@@ -84,14 +85,17 @@ export async function publishNews(facts: string, { force = false } = {}): Promis
       .map((line) => line.trim())
       .filter(Boolean);
 
-    if (!headline) return;
+    if (!headline) return false;
 
-    await supabaseAdmin()
+    const { error } = await supabaseAdmin()
       .from("news")
       .insert({ headline: headline.slice(0, 120), body: rest.join(" ").slice(0, 300) || null });
+
+    return !error;
   } catch (error) {
     // News is decoration. Losing it must never cost someone their score.
     console.error("Could not write the news:", error);
+    return false;
   }
 }
 
