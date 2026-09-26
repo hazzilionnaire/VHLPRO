@@ -302,10 +302,25 @@ export async function getGamesForStatEntry(seasonId: string): Promise<Game[]> {
     .select("*")
     .eq("season_id", seasonId)
     .neq("status", "cancelled")
-    .order("starts_at", { ascending: false })
     .returns<Game[]>();
 
-  return data ?? [];
+  // Sorting by date alone put the last Friday of the season at the top, so
+  // the form opened on a game months away and quietly took entries for it.
+  // Games already played come first, most recent of them first, because
+  // that's the one somebody is filling in. Fixtures still to come follow,
+  // soonest first.
+  const now = Date.now();
+
+  return (data ?? []).slice().sort((a, b) => {
+    const aPlayed = Date.parse(a.starts_at) <= now;
+    const bPlayed = Date.parse(b.starts_at) <= now;
+
+    if (aPlayed !== bPlayed) return aPlayed ? -1 : 1;
+
+    return aPlayed
+      ? Date.parse(b.starts_at) - Date.parse(a.starts_at)
+      : Date.parse(a.starts_at) - Date.parse(b.starts_at);
+  });
 }
 
 /** Every line recorded this season, so the entry form can prefill any game. */
